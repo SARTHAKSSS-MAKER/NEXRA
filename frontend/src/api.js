@@ -41,3 +41,23 @@ export const getDashboard = () => {
 export const getSettings = () => {
   return request("/api/settings")
 }
+export const getDashboardData = async () => {
+  const [
+    dashboard,
+    transactions,
+    alerts,
+    risk
+  ] = await Promise.all([
+    getDashboard(),
+    getTransactions(),
+    getAlerts(),
+    getRisk()
+  ])
+
+  return {
+    dashboard,
+    transactions,
+    alerts,
+    risk
+  }
+}
