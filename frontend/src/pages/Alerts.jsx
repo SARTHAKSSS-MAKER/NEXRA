@@ -1,169 +1,275 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { getAlerts } from "../api"
 
 function Alerts() {
+  const [alerts, setAlerts] = useState([])
   const [filter, setFilter] = useState("All Alerts")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
-  const alerts = [
-    {
-      id: "ALT-5021",
-      title: "Unusual Transaction Pattern",
-      description: "Multiple high-value transactions detected",
-      user: "Aarav Mehta",
-      amount: "₹84,500",
-      risk: 91,
-      level: "Critical",
-      status: "Open",
-      time: "2 min ago",
-    },
-    {
-      id: "ALT-5020",
-      title: "New Device Detected",
-      description: "Transaction initiated from an unrecognized device",
-      user: "Kabir Singh",
-      amount: "₹46,200",
-      risk: 72,
-      level: "High",
-      status: "Investigating",
-      time: "8 min ago",
-    },
-    {
-      id: "ALT-5019",
-      title: "Multiple Failed Attempts",
-      description: "Several authentication failures detected",
-      user: "Vihaan Patel",
-      amount: "₹1,24,800",
-      risk: 96,
-      level: "Critical",
-      status: "Open",
-      time: "16 min ago",
-    },
-    {
-      id: "ALT-5018",
-      title: "Location Anomaly",
-      description: "Transaction location differs from usual activity",
-      user: "Ishita Kapoor",
-      amount: "₹28,900",
-      risk: 64,
-      level: "Medium",
-      status: "Review",
-      time: "21 min ago",
-    },
-    {
-      id: "ALT-5017",
-      title: "Unusual Transaction Amount",
-      description: "Transaction exceeds user's normal spending pattern",
-      user: "Riya Sharma",
-      amount: "₹12,800",
-      risk: 58,
-      level: "Medium",
-      status: "Review",
-      time: "29 min ago",
-    },
-    {
-      id: "ALT-5016",
-      title: "Trusted Device Activity",
-      description: "Transaction matches normal user behaviour",
-      user: "Ananya Rao",
-      amount: "₹7,450",
-      risk: 18,
-      level: "Low",
-      status: "Resolved",
-      time: "34 min ago",
-    },
-  ]
+  useEffect(() => {
+    getAlerts()
+      .then((data) => {
+        setAlerts(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.error("Alerts API error:", error)
+        setError("Unable to connect to NEXRA backend")
+        setLoading(false)
+      })
+  }, [])
+
+  const normalizedAlerts = useMemo(() => {
+    return alerts.map((alert) => ({
+      id: alert.id ?? alert.alert_id ?? "ALT-0000",
+
+      title:
+        alert.title ??
+        alert.type ??
+        alert.name ??
+        "Security Alert",
+
+      description:
+        alert.description ??
+        alert.message ??
+        "Suspicious activity detected",
+
+      user:
+        alert.user ??
+        alert.user_name ??
+        alert.customer ??
+        "Unknown User",
+
+      amount:
+        alert.amount !== undefined && alert.amount !== null
+          ? `₹${Number(alert.amount).toLocaleString("en-IN")}`
+          : "—",
+
+      risk: Number(
+        alert.risk ??
+        alert.risk_score ??
+        0
+      ),
+
+      level:
+        alert.level ??
+        alert.severity ??
+        "Medium",
+
+      status:
+        alert.status ??
+        "Open",
+
+      time:
+        alert.time ??
+        alert.timestamp ??
+        "Recently",
+    }))
+  }, [alerts])
 
   const filteredAlerts =
     filter === "All Alerts"
-      ? alerts
-      : alerts.filter((alert) => alert.level === filter)
+      ? normalizedAlerts
+      : normalizedAlerts.filter(
+          (alert) => alert.level.toLowerCase() === filter.toLowerCase()
+        )
+
+  const activeAlerts = normalizedAlerts.filter(
+    (alert) =>
+      alert.status.toLowerCase() !== "resolved"
+  )
+
+  const criticalAlerts = normalizedAlerts.filter(
+    (alert) =>
+      alert.level.toLowerCase() === "critical"
+  )
+
+  const investigatingAlerts = normalizedAlerts.filter(
+    (alert) =>
+      alert.status.toLowerCase() === "investigating" ||
+      alert.status.toLowerCase() === "review"
+  )
+
+  const resolvedAlerts = normalizedAlerts.filter(
+    (alert) =>
+      alert.status.toLowerCase() === "resolved"
+  )
+
+  if (loading) {
+    return (
+      <div className="page alerts-page">
+        <div
+          style={{
+            padding: "60px",
+            textAlign: "center",
+            color: "#aaa",
+          }}
+        >
+          Loading NEXRA alerts...
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="page alerts-page">
+        <div
+          style={{
+            padding: "60px",
+            textAlign: "center",
+            color: "#ff6b6b",
+          }}
+        >
+          {error}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="page alerts-page">
 
       {/* PAGE HEADING */}
       <div className="page-heading">
-        <div>
-          <p className="eyebrow">THREAT INTELLIGENCE</p>
 
-          <h1>Alerts</h1>
+        <div>
+          <p className="eyebrow">
+            THREAT INTELLIGENCE
+          </p>
+
+          <h1>
+            Alerts
+          </h1>
 
           <p className="subtitle">
             Review and investigate suspicious activity
           </p>
         </div>
 
+
         {/* FILTER */}
         <div className="alert-filter-wrapper">
+
           <button
             type="button"
             className="alert-filter-button"
-            onClick={() =>
-              setFilter(
-                filter === "All Alerts"
-                  ? "Critical"
-                  : filter === "Critical"
-                  ? "High"
-                  : filter === "High"
-                  ? "Medium"
-                  : "All Alerts"
-              )
-            }
+            onClick={() => {
+              if (filter === "All Alerts") {
+                setFilter("Critical")
+              } else if (filter === "Critical") {
+                setFilter("High")
+              } else if (filter === "High") {
+                setFilter("Medium")
+              } else {
+                setFilter("All Alerts")
+              }
+            }}
           >
-            <span>{filter}</span>
-            <span className="filter-arrow">⌄</span>
+            <span>
+              {filter}
+            </span>
+
+            <span className="filter-arrow">
+              ⌄
+            </span>
+
           </button>
+
         </div>
+
       </div>
 
 
       {/* ALERT SUMMARY */}
       <section className="alert-summary">
 
+        {/* ACTIVE */}
         <div className="alert-summary-card">
+
           <div className="summary-top">
-            <span>Active Alerts</span>
+            <span>
+              Active Alerts
+            </span>
+
             <i></i>
           </div>
 
-          <strong>24</strong>
+          <strong>
+            {activeAlerts.length}
+          </strong>
 
-          <small>+6 from yesterday</small>
+          <small>
+            Currently active
+          </small>
+
         </div>
 
 
+        {/* CRITICAL */}
         <div className="alert-summary-card critical-card">
+
           <div className="summary-top">
-            <span>Critical</span>
+            <span>
+              Critical
+            </span>
+
             <i></i>
           </div>
 
-          <strong>7</strong>
+          <strong>
+            {criticalAlerts.length}
+          </strong>
 
-          <small>Requires immediate action</small>
+          <small>
+            Requires immediate action
+          </small>
+
         </div>
 
 
+        {/* INVESTIGATING */}
         <div className="alert-summary-card">
+
           <div className="summary-top">
-            <span>Investigating</span>
+            <span>
+              Investigating
+            </span>
+
             <i></i>
           </div>
 
-          <strong>11</strong>
+          <strong>
+            {investigatingAlerts.length}
+          </strong>
 
-          <small>Currently under review</small>
+          <small>
+            Currently under review
+          </small>
+
         </div>
 
 
+        {/* RESOLVED */}
         <div className="alert-summary-card safe-card">
+
           <div className="summary-top">
-            <span>Resolved</span>
+            <span>
+              Resolved
+            </span>
+
             <i></i>
           </div>
 
-          <strong>86</strong>
+          <strong>
+            {resolvedAlerts.length}
+          </strong>
 
-          <small>Last 24 hours</small>
+          <small>
+            Resolved alerts
+          </small>
+
         </div>
 
       </section>
@@ -175,7 +281,9 @@ function Alerts() {
         <div className="panel-header alerts-panel-header">
 
           <div>
-            <h2>Alert Queue</h2>
+            <h2>
+              Alert Queue
+            </h2>
 
             <p>
               Latest security alerts generated by the risk engine
@@ -192,13 +300,33 @@ function Alerts() {
         {/* TABLE HEADER */}
         <div className="alerts-table-head">
 
-          <span>Alert</span>
-          <span>User</span>
-          <span>Amount</span>
-          <span>Risk Score</span>
-          <span>Level</span>
-          <span>Status</span>
-          <span>Time</span>
+          <span>
+            Alert
+          </span>
+
+          <span>
+            User
+          </span>
+
+          <span>
+            Amount
+          </span>
+
+          <span>
+            Risk Score
+          </span>
+
+          <span>
+            Level
+          </span>
+
+          <span>
+            Status
+          </span>
+
+          <span>
+            Time
+          </span>
 
         </div>
 
@@ -206,87 +334,125 @@ function Alerts() {
         {/* ALERT ROWS */}
         <div className="alerts-list">
 
-          {filteredAlerts.map((alert) => (
+          {filteredAlerts.length === 0 ? (
 
             <div
-              className="alert-table-row"
-              key={alert.id}
+              style={{
+                padding: "50px",
+                textAlign: "center",
+                color: "#888",
+              }}
             >
-
-              {/* ALERT */}
-              <div className="alert-main">
-
-                <div className={`alert-icon ${alert.level.toLowerCase()}`}>
-                  !
-                </div>
-
-                <div>
-                  <strong>{alert.title}</strong>
-
-                  <small>
-                    {alert.id} · {alert.description}
-                  </small>
-                </div>
-
-              </div>
-
-
-              {/* USER */}
-              <span className="alert-user">
-                {alert.user}
-              </span>
-
-
-              {/* AMOUNT */}
-              <strong className="alert-amount">
-                {alert.amount}
-              </strong>
-
-
-              {/* RISK */}
-              <div className="alert-risk">
-
-                <div className="alert-risk-bar">
-                  <i
-                    style={{
-                      width: `${alert.risk}%`,
-                    }}
-                  ></i>
-                </div>
-
-                <strong>
-                  {alert.risk}
-                </strong>
-
-              </div>
-
-
-              {/* LEVEL */}
-              <span
-                className={`alert-level ${alert.level.toLowerCase()}`}
-              >
-                {alert.level}
-              </span>
-
-
-              {/* STATUS */}
-              <span
-                className={`alert-status ${alert.status
-                  .toLowerCase()
-                  .replace(" ", "-")}`}
-              >
-                {alert.status}
-              </span>
-
-
-              {/* TIME */}
-              <span className="alert-time">
-                {alert.time}
-              </span>
-
+              No alerts found.
             </div>
 
-          ))}
+          ) : (
+
+            filteredAlerts.map((alert) => {
+
+              const levelClass =
+                alert.level
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")
+
+              const statusClass =
+                alert.status
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")
+
+              return (
+
+                <div
+                  className="alert-table-row"
+                  key={alert.id}
+                >
+
+                  {/* ALERT */}
+                  <div className="alert-main">
+
+                    <div
+                      className={`alert-icon ${levelClass}`}
+                    >
+                      !
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        {alert.title}
+                      </strong>
+
+                      <small>
+                        {alert.id} · {alert.description}
+                      </small>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* USER */}
+                  <span className="alert-user">
+                    {alert.user}
+                  </span>
+
+
+                  {/* AMOUNT */}
+                  <strong className="alert-amount">
+                    {alert.amount}
+                  </strong>
+
+
+                  {/* RISK */}
+                  <div className="alert-risk">
+
+                    <div className="alert-risk-bar">
+
+                      <i
+                        style={{
+                          width: `${Math.min(
+                            Math.max(alert.risk, 0),
+                            100
+                          )}%`,
+                        }}
+                      ></i>
+
+                    </div>
+
+                    <strong>
+                      {alert.risk}
+                    </strong>
+
+                  </div>
+
+
+                  {/* LEVEL */}
+                  <span
+                    className={`alert-level ${levelClass}`}
+                  >
+                    {alert.level}
+                  </span>
+
+
+                  {/* STATUS */}
+                  <span
+                    className={`alert-status ${statusClass}`}
+                  >
+                    {alert.status}
+                  </span>
+
+
+                  {/* TIME */}
+                  <span className="alert-time">
+                    {alert.time}
+                  </span>
+
+                </div>
+
+              )
+            })
+
+          )}
 
         </div>
 

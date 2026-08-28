@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react"
-import { getDashboardData } from "../api"
+import {
+  getDashboard,
+  getTransactions,
+  getAlerts,
+  getRisk,
+} from "../api"
 
 function Dashboard() {
   const [dashboard, setDashboard] = useState(null)
@@ -10,21 +15,33 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-useEffect(() => {
-  getDashboardData()
-    .then((data) => {
-      setDashboard(data.dashboard)
-      setTransactions(data.transactions)
-      setAlerts(data.alerts)
-      setRisk(data.risk)
-      setLoading(false)
-    })
-    .catch((error) => {
-      console.error("Dashboard API error:", error)
-      setError("Unable to connect to NEXRA backend")
-      setLoading(false)
-    })
-}, [])
+  useEffect(() => {
+    Promise.all([
+      getDashboard(),
+      getTransactions(),
+      getAlerts(),
+      getRisk(),
+    ])
+      .then(
+        ([
+          dashboardData,
+          transactionsData,
+          alertsData,
+          riskData,
+        ]) => {
+          setDashboard(dashboardData)
+          setTransactions(transactionsData)
+          setAlerts(alertsData)
+          setRisk(riskData)
+          setLoading(false)
+        }
+      )
+      .catch((error) => {
+        console.error("Dashboard API error:", error)
+        setError("Unable to connect to NEXRA backend")
+        setLoading(false)
+      })
+  }, [])
 
   if (loading) {
     return (
@@ -58,12 +75,37 @@ useEffect(() => {
     )
   }
 
+  const totalRisk =
+    Number(risk?.high_risk || 0) +
+    Number(risk?.medium_risk || 0) +
+    Number(risk?.low_risk || 0)
+
+  const highRiskPercentage =
+    totalRisk > 0
+      ? ((Number(risk?.high_risk || 0) / totalRisk) * 100).toFixed(1)
+      : "0.0"
+
+  const mediumRiskPercentage =
+    totalRisk > 0
+      ? ((Number(risk?.medium_risk || 0) / totalRisk) * 100).toFixed(1)
+      : "0.0"
+
+  const lowRiskPercentage =
+    totalRisk > 0
+      ? ((Number(risk?.low_risk || 0) / totalRisk) * 100).toFixed(1)
+      : "0.0"
+
+  const highPriorityAlerts = alerts.filter(
+    (alert) =>
+      alert.severity === "Critical" ||
+      alert.severity === "High"
+  ).length
+
   return (
     <div className="dashboard-page">
 
       {/* PAGE HEADER */}
       <div className="page-heading dashboard-heading">
-
         <div>
           <p className="eyebrow">SECURITY OVERVIEW</p>
 
@@ -78,7 +120,6 @@ useEffect(() => {
           <span className="live-dot"></span>
           System Live
         </div>
-
       </div>
 
 
@@ -87,7 +128,6 @@ useEffect(() => {
 
         {/* TOTAL TRANSACTIONS */}
         <div className="dashboard-stat-card">
-
           <div className="stat-top">
             <span>Total Transactions</span>
             <div className="stat-icon">↗</div>
@@ -103,13 +143,11 @@ useEffect(() => {
             ↑ 12.8%
             <span>vs last month</span>
           </div>
-
         </div>
 
 
         {/* HIGH RISK */}
         <div className="dashboard-stat-card">
-
           <div className="stat-top">
             <span>High Risk Transactions</span>
             <div className="stat-icon danger">!</div>
@@ -125,13 +163,11 @@ useEffect(() => {
             ↑ 4.7%
             <span>requires attention</span>
           </div>
-
         </div>
 
 
         {/* ACCURACY */}
         <div className="dashboard-stat-card">
-
           <div className="stat-top">
             <span>Detection Accuracy</span>
             <div className="stat-icon">◈</div>
@@ -145,13 +181,11 @@ useEffect(() => {
             ↑ 2.1%
             <span>from last month</span>
           </div>
-
         </div>
 
 
         {/* ACTIVE ALERTS */}
         <div className="dashboard-stat-card">
-
           <div className="stat-top">
             <span>Active Alerts</span>
             <div className="stat-icon warning">!</div>
@@ -162,15 +196,9 @@ useEffect(() => {
           </strong>
 
           <div className="stat-bottom warning-text">
-            {alerts.filter(
-              (alert) =>
-                alert.severity === "Critical" ||
-                alert.severity === "High"
-            ).length}{" "}
-            high priority
+            {highPriorityAlerts} high priority
             <span>currently active</span>
           </div>
-
         </div>
 
       </section>
@@ -179,12 +207,10 @@ useEffect(() => {
       {/* MAIN ANALYTICS GRID */}
       <section className="dashboard-main-grid">
 
-
         {/* TRANSACTION ACTIVITY */}
         <div className="panel dashboard-chart-panel">
 
           <div className="panel-header">
-
             <div>
               <h2>Transaction Activity</h2>
 
@@ -196,11 +222,9 @@ useEffect(() => {
             <button className="dashboard-filter">
               Last 30 Days <span>⌄</span>
             </button>
-
           </div>
 
 
-          {/* KEEPING YOUR CURRENT CHART */}
           <div className="activity-chart">
 
             <div className="chart-y-axis">
@@ -222,7 +246,6 @@ useEffect(() => {
               <div className="chart-grid-line"></div>
               <div className="chart-grid-line"></div>
 
-
               <svg
                 className="activity-line"
                 viewBox="0 0 700 250"
@@ -230,7 +253,6 @@ useEffect(() => {
               >
 
                 <defs>
-
                   <linearGradient
                     id="activityGradient"
                     x1="0"
@@ -238,7 +260,6 @@ useEffect(() => {
                     x2="0"
                     y2="1"
                   >
-
                     <stop
                       offset="0%"
                       stopOpacity="0.25"
@@ -248,9 +269,7 @@ useEffect(() => {
                       offset="100%"
                       stopOpacity="0"
                     />
-
                   </linearGradient>
-
                 </defs>
 
 
@@ -314,7 +333,6 @@ useEffect(() => {
         <div className="panel dashboard-risk-panel">
 
           <div className="panel-header">
-
             <div>
               <h2>Risk Distribution</h2>
 
@@ -322,7 +340,6 @@ useEffect(() => {
                 Current transaction risk levels
               </p>
             </div>
-
           </div>
 
 
@@ -333,11 +350,7 @@ useEffect(() => {
               <div className="dashboard-donut-center">
 
                 <strong>
-                  {Number(
-                    risk?.high_risk +
-                    risk?.medium_risk +
-                    risk?.low_risk
-                  ).toLocaleString("en-IN")}
+                  {totalRisk.toLocaleString("en-IN")}
                 </strong>
 
                 <span>Total</span>
@@ -358,17 +371,8 @@ useEffect(() => {
               </span>
 
               <strong>
-                {(
-                  (risk.high_risk /
-                    (
-                      risk.high_risk +
-                      risk.medium_risk +
-                      risk.low_risk
-                    )) *
-                  100
-                ).toFixed(1)}%
+                {highRiskPercentage}%
               </strong>
-
             </div>
 
 
@@ -379,17 +383,8 @@ useEffect(() => {
               </span>
 
               <strong>
-                {(
-                  (risk.medium_risk /
-                    (
-                      risk.high_risk +
-                      risk.medium_risk +
-                      risk.low_risk
-                    )) *
-                  100
-                ).toFixed(1)}%
+                {mediumRiskPercentage}%
               </strong>
-
             </div>
 
 
@@ -400,17 +395,8 @@ useEffect(() => {
               </span>
 
               <strong>
-                {(
-                  (risk.low_risk /
-                    (
-                      risk.high_risk +
-                      risk.medium_risk +
-                      risk.low_risk
-                    )) *
-                  100
-                ).toFixed(1)}%
+                {lowRiskPercentage}%
               </strong>
-
             </div>
 
           </div>
@@ -422,7 +408,6 @@ useEffect(() => {
 
       {/* BOTTOM GRID */}
       <section className="dashboard-bottom-grid">
-
 
         {/* RECENT TRANSACTIONS */}
         <div className="panel dashboard-transactions">
@@ -476,20 +461,17 @@ useEffect(() => {
                     #{transaction.id}
                   </span>
 
-
                   <strong>
                     ₹{Number(
                       transaction.amount
                     ).toLocaleString("en-IN")}
                   </strong>
 
-
                   <b
                     className={`dashboard-risk-badge ${riskClass}`}
                   >
                     {riskScore}
                   </b>
-
 
                   <span
                     className={`dashboard-status-badge ${
@@ -526,14 +508,7 @@ useEffect(() => {
             </div>
 
             <span className="alert-count">
-              {
-                alerts.filter(
-                  (alert) =>
-                    alert.severity === "Critical" ||
-                    alert.severity === "High"
-                ).length
-              }{" "}
-              High
+              {highPriorityAlerts} High
             </span>
 
           </div>

@@ -1,11 +1,155 @@
+import { useEffect, useMemo, useState } from "react"
+import {
+  getRisk,
+  getTransactions,
+  getAlerts,
+} from "../api"
+
 function RiskMonitor() {
+  const [risk, setRisk] = useState(null)
+  const [transactions, setTransactions] = useState([])
+  const [alerts, setAlerts] = useState([])
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    Promise.all([
+      getRisk(),
+      getTransactions(),
+      getAlerts(),
+    ])
+      .then(([riskData, transactionsData, alertsData]) => {
+        setRisk(riskData)
+        setTransactions(transactionsData || [])
+        setAlerts(alertsData || [])
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.error("Risk Monitor API error:", error)
+        setError("Unable to connect to NEXRA backend")
+        setLoading(false)
+      })
+  }, [])
+
+  /*
+   * Calculate risk totals
+   */
+  const riskTotals = useMemo(() => {
+    const high = Number(risk?.high_risk || 0)
+    const medium = Number(risk?.medium_risk || 0)
+    const low = Number(risk?.low_risk || 0)
+
+    const total = high + medium + low
+
+    return {
+      high,
+      medium,
+      low,
+      total,
+    }
+  }, [risk])
+
+  /*
+   * Current risk score
+   * Uses the highest risk score from the available transaction stream.
+   */
+  const currentRiskScore = useMemo(() => {
+    if (!transactions.length) return 0
+
+    return Math.max(
+      ...transactions.map((transaction) =>
+        Number(transaction.risk_score || 0)
+      )
+    )
+  }, [transactions])
+
+  /*
+   * Risk level
+   */
+  const currentRiskLevel =
+    currentRiskScore >= 80
+      ? "HIGH RISK"
+      : currentRiskScore >= 60
+      ? "MEDIUM RISK"
+      : "LOW RISK"
+
+  /*
+   * Active high-priority alerts
+   */
+  const highPriorityAlerts = alerts.filter(
+    (alert) =>
+      alert.severity === "Critical" ||
+      alert.severity === "High"
+  )
+
+  /*
+   * Transaction statistics
+   */
+  const highRiskTransactions = transactions.filter(
+    (transaction) =>
+      Number(transaction.risk_score || 0) >= 80
+  ).length
+
+  const mediumRiskTransactions = transactions.filter(
+    (transaction) => {
+      const score = Number(transaction.risk_score || 0)
+
+      return score >= 60 && score < 80
+    }
+  ).length
+
+  /*
+   * Loading
+   */
+  if (loading) {
+    return (
+      <div className="risk-monitor-page">
+        <div
+          style={{
+            padding: "60px",
+            textAlign: "center",
+            color: "#aaa",
+          }}
+        >
+          Loading NEXRA risk monitor...
+        </div>
+      </div>
+    )
+  }
+
+  /*
+   * Error
+   */
+  if (error) {
+    return (
+      <div className="risk-monitor-page">
+        <div
+          style={{
+            padding: "60px",
+            textAlign: "center",
+            color: "#ff6b6b",
+          }}
+        >
+          {error}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="risk-monitor-page">
 
-      {/* PAGE HEADER */}
+      {/* =========================
+          PAGE HEADER
+      ========================== */}
+
       <div className="risk-monitor-heading">
+
         <div>
-          <p className="risk-monitor-eyebrow">LIVE RISK ANALYSIS</p>
+          <p className="risk-monitor-eyebrow">
+            LIVE RISK ANALYSIS
+          </p>
 
           <h1>Risk Monitor</h1>
 
@@ -18,69 +162,125 @@ function RiskMonitor() {
           <span className="risk-live-dot"></span>
           <span>System Live</span>
         </div>
+
       </div>
 
 
-      {/* STAT CARDS */}
+      {/* =========================
+          STAT CARDS
+      ========================== */}
+
       <section className="risk-monitor-stats">
 
+        {/* CURRENT RISK SCORE */}
+
         <div className="risk-stat-card">
-          <span className="risk-stat-label">Current Risk Score</span>
+
+          <span className="risk-stat-label">
+            Current Risk Score
+          </span>
 
           <strong className="risk-stat-value">
-            82<span>/100</span>
+            {currentRiskScore}
+            <span>/100</span>
+          </strong>
+
+          <small
+            className={
+              currentRiskScore >= 80
+                ? "risk-danger-text"
+                : currentRiskScore >= 60
+                ? "risk-warning-text"
+                : "risk-safe-text"
+            }
+          >
+            {currentRiskLevel}
+          </small>
+
+        </div>
+
+
+        {/* TRANSACTIONS SCANNED */}
+
+        <div className="risk-stat-card">
+
+          <span className="risk-stat-label">
+            Transactions Scanned
+          </span>
+
+          <strong className="risk-stat-value">
+            {transactions.length.toLocaleString("en-IN")}
+          </strong>
+
+          <small>
+            Available transaction stream
+          </small>
+
+        </div>
+
+
+        {/* HIGH RISK DETECTED */}
+
+        <div className="risk-stat-card">
+
+          <span className="risk-stat-label">
+            High Risk Detected
+          </span>
+
+          <strong className="risk-stat-value">
+            {riskTotals.high.toLocaleString("en-IN")}
           </strong>
 
           <small className="risk-danger-text">
-            ↑ 8.4% from yesterday
+            {riskTotals.total > 0
+              ? `${(
+                  (riskTotals.high / riskTotals.total) *
+                  100
+                ).toFixed(1)}% of total risk data`
+              : "No risk data"}
           </small>
+
         </div>
 
 
-        <div className="risk-stat-card">
-          <span className="risk-stat-label">Transactions Scanned</span>
-
-          <strong className="risk-stat-value">
-            1,389
-          </strong>
-
-          <small>Last 24 hours</small>
-        </div>
-
+        {/* DETECTION ACCURACY */}
 
         <div className="risk-stat-card">
-          <span className="risk-stat-label">High Risk Detected</span>
 
-          <strong className="risk-stat-value">
-            347
-          </strong>
-
-          <small className="risk-danger-text">
-            25% of transactions
-          </small>
-        </div>
-
-
-        <div className="risk-stat-card">
-          <span className="risk-stat-label">Detection Accuracy</span>
+          <span className="risk-stat-label">
+            Risk Coverage
+          </span>
 
           <strong className="risk-stat-value risk-positive">
-            95.1%
+            {riskTotals.total > 0
+              ? `${(
+                  ((riskTotals.high + riskTotals.medium) /
+                    riskTotals.total) *
+                  100
+                ).toFixed(1)}%`
+              : "0%"}
           </strong>
 
           <small className="risk-safe-text">
-            ↑ 3.1% improvement
+            High + medium risk coverage
           </small>
+
         </div>
 
       </section>
 
 
-      {/* LIVE ANALYSIS + ACTIVE EVENTS */}
+      {/* =========================
+          MAIN GRID
+      ========================== */}
+
       <section className="risk-monitor-main-grid">
 
 
-        {/* LIVE RISK ANALYSIS */}
+        {/* =========================
+            LIVE RISK ANALYSIS
+        ========================== */}
+
         <div className="risk-monitor-panel">
 
           <div className="risk-monitor-panel-header">
@@ -89,7 +289,7 @@ function RiskMonitor() {
               <h2>Live Risk Analysis</h2>
 
               <p>
-                Real-time transaction monitoring
+                Real-time transaction risk monitoring
               </p>
             </div>
 
@@ -102,13 +302,26 @@ function RiskMonitor() {
 
 
           {/* RISK METER */}
+
           <div className="risk-meter-wrapper">
 
-            <div className="risk-meter-circle">
+            <div
+              className="risk-meter-circle"
+              style={{
+                "--risk-score": `${currentRiskScore * 3.6}deg`,
+              }}
+            >
 
               <div className="risk-meter-inner">
-                <strong>82</strong>
-                <span>HIGH RISK</span>
+
+                <strong>
+                  {currentRiskScore}
+                </strong>
+
+                <span>
+                  {currentRiskLevel}
+                </span>
+
               </div>
 
             </div>
@@ -117,41 +330,86 @@ function RiskMonitor() {
 
 
           {/* RISK FACTORS */}
+
           <div className="risk-factor-list">
 
+
+            {/* TRANSACTION VELOCITY */}
+
             <div className="risk-factor">
+
               <div>
-                <span>Transaction Velocity</span>
-                <small>Activity frequency</small>
+                <span>
+                  Transaction Velocity
+                </span>
+
+                <small>
+                  Activity frequency
+                </small>
               </div>
 
-              <strong className="factor-high">
-                High
+              <strong
+                className={
+                  highRiskTransactions > 0
+                    ? "factor-high"
+                    : "factor-medium"
+                }
+              >
+                {highRiskTransactions > 0
+                  ? "High"
+                  : "Normal"}
               </strong>
+
             </div>
 
 
+            {/* HIGH RISK ACTIVITY */}
+
             <div className="risk-factor">
+
               <div>
-                <span>Location Anomaly</span>
-                <small>Geographic behaviour</small>
+                <span>
+                  High Risk Activity
+                </span>
+
+                <small>
+                  Transactions above risk threshold
+                </small>
               </div>
 
-              <strong className="factor-danger">
-                Detected
+              <strong
+                className={
+                  highRiskTransactions > 0
+                    ? "factor-danger"
+                    : "factor-medium"
+                }
+              >
+                {highRiskTransactions > 0
+                  ? `${highRiskTransactions} Detected`
+                  : "None"}
               </strong>
+
             </div>
 
 
+            {/* MEDIUM RISK ACTIVITY */}
+
             <div className="risk-factor">
+
               <div>
-                <span>Device Trust</span>
-                <small>Device reputation</small>
+                <span>
+                  Medium Risk Activity
+                </span>
+
+                <small>
+                  Transactions requiring monitoring
+                </small>
               </div>
 
               <strong className="factor-medium">
-                Medium
+                {mediumRiskTransactions}
               </strong>
+
             </div>
 
           </div>
@@ -159,7 +417,10 @@ function RiskMonitor() {
         </div>
 
 
-        {/* ACTIVE RISK EVENTS */}
+        {/* =========================
+            ACTIVE RISK EVENTS
+        ========================== */}
+
         <div className="risk-monitor-panel">
 
           <div className="risk-monitor-panel-header">
@@ -173,7 +434,7 @@ function RiskMonitor() {
             </div>
 
             <span className="risk-event-count">
-              4 Active
+              {highPriorityAlerts.length} High
             </span>
 
           </div>
@@ -181,117 +442,69 @@ function RiskMonitor() {
 
           <div className="risk-event-list">
 
+            {alerts.length === 0 ? (
 
-            {/* EVENT 1 */}
-            <div className="risk-event-card">
-
-              <div className="risk-event-icon high">
-                !
+              <div
+                style={{
+                  padding: "30px 10px",
+                  textAlign: "center",
+                  color: "#888",
+                }}
+              >
+                No active risk events
               </div>
 
-              <div className="risk-event-info">
-                <strong>
-                  Unusual Transaction Pattern
-                </strong>
+            ) : (
 
-                <span>
-                  Transaction velocity exceeded threshold
-                </span>
+              alerts.slice(0, 4).map((alert) => {
 
-                <small>
-                  2 minutes ago
-                </small>
-              </div>
+                const alertClass =
+                  alert.severity === "Critical" ||
+                  alert.severity === "High"
+                    ? "high"
+                    : "medium"
 
-              <b className="risk-event-level high">
-                HIGH
-              </b>
+                return (
+                  <div
+                    className="risk-event-card"
+                    key={alert.id}
+                  >
 
-            </div>
-
-
-            {/* EVENT 2 */}
-            <div className="risk-event-card">
-
-              <div className="risk-event-icon high">
-                !
-              </div>
-
-              <div className="risk-event-info">
-                <strong>
-                  Location Anomaly
-                </strong>
-
-                <span>
-                  Impossible travel pattern detected
-                </span>
-
-                <small>
-                  15 minutes ago
-                </small>
-              </div>
-
-              <b className="risk-event-level high">
-                HIGH
-              </b>
-
-            </div>
+                    <div
+                      className={`risk-event-icon ${alertClass}`}
+                    >
+                      !
+                    </div>
 
 
-            {/* EVENT 3 */}
-            <div className="risk-event-card">
+                    <div className="risk-event-info">
 
-              <div className="risk-event-icon medium">
-                !
-              </div>
+                      <strong>
+                        {alert.type}
+                      </strong>
 
-              <div className="risk-event-info">
-                <strong>
-                  Velocity Check Failed
-                </strong>
+                      <span>
+                        {alert.message}
+                      </span>
 
-                <span>
-                  Multiple transactions in short period
-                </span>
+                      <small>
+                        {alert.status}
+                      </small>
 
-                <small>
-                  32 minutes ago
-                </small>
-              </div>
-
-              <b className="risk-event-level medium">
-                MEDIUM
-              </b>
-
-            </div>
+                    </div>
 
 
-            {/* EVENT 4 */}
-            <div className="risk-event-card">
+                    <b
+                      className={`risk-event-level ${alertClass}`}
+                    >
+                      {alert.severity}
+                    </b>
 
-              <div className="risk-event-icon medium">
-                !
-              </div>
+                  </div>
+                )
+              })
 
-              <div className="risk-event-info">
-                <strong>
-                  Device Fingerprint Change
-                </strong>
-
-                <span>
-                  New device detected for account
-                </span>
-
-                <small>
-                  1 hour ago
-                </small>
-              </div>
-
-              <b className="risk-event-level medium">
-                MEDIUM
-              </b>
-
-            </div>
+            )}
 
           </div>
 
@@ -300,7 +513,10 @@ function RiskMonitor() {
       </section>
 
 
-      {/* TRANSACTION STREAM */}
+      {/* =========================
+          LIVE TRANSACTION STREAM
+      ========================== */}
+
       <section className="risk-monitor-panel transaction-stream-panel">
 
         <div className="risk-monitor-panel-header">
@@ -323,119 +539,109 @@ function RiskMonitor() {
         <div className="risk-transaction-table">
 
           {/* TABLE HEADER */}
+
           <div className="risk-transaction-head">
 
-            <span>TRANSACTION</span>
-            <span>AMOUNT</span>
-            <span>LOCATION</span>
-            <span>RISK</span>
-            <span>STATUS</span>
+            <span>
+              TRANSACTION
+            </span>
+
+            <span>
+              AMOUNT
+            </span>
+
+            <span>
+              LOCATION
+            </span>
+
+            <span>
+              RISK
+            </span>
+
+            <span>
+              STATUS
+            </span>
 
           </div>
 
 
-          {/* ROW 1 */}
-          <div className="risk-transaction-row">
+          {/* TRANSACTIONS */}
 
-            <span className="transaction-id">
-              #TXN-98241
-            </span>
+          {transactions.length === 0 ? (
 
-            <span>
-              ₹84,500
-            </span>
+            <div
+              style={{
+                padding: "40px",
+                textAlign: "center",
+                color: "#888",
+              }}
+            >
+              No transactions available
+            </div>
 
-            <span>
-              Mumbai, IN
-            </span>
+          ) : (
 
-            <strong className="transaction-risk high">
-              82
-            </strong>
+            transactions.slice(0, 6).map((transaction) => {
 
-            <b className="transaction-status blocked">
-              Blocked
-            </b>
+              const riskScore =
+                Number(transaction.risk_score || 0)
 
-          </div>
+              const riskClass =
+                riskScore >= 80
+                  ? "high"
+                  : riskScore >= 60
+                  ? "medium"
+                  : "low"
 
+              const statusClass =
+                transaction.status === "Blocked"
+                  ? "blocked"
+                  : transaction.status === "Review"
+                  ? "review"
+                  : "approved"
 
-          {/* ROW 2 */}
-          <div className="risk-transaction-row">
+              return (
+                <div
+                  className="risk-transaction-row"
+                  key={transaction.id}
+                >
 
-            <span className="transaction-id">
-              #TXN-98240
-            </span>
-
-            <span>
-              ₹12,800
-            </span>
-
-            <span>
-              Pune, IN
-            </span>
-
-            <strong className="transaction-risk medium">
-              61
-            </strong>
-
-            <b className="transaction-status review">
-              Review
-            </b>
-
-          </div>
+                  <span className="transaction-id">
+                    #{transaction.id}
+                  </span>
 
 
-          {/* ROW 3 */}
-          <div className="risk-transaction-row">
-
-            <span className="transaction-id">
-              #TXN-98239
-            </span>
-
-            <span>
-              ₹3,250
-            </span>
-
-            <span>
-              Delhi, IN
-            </span>
-
-            <strong className="transaction-risk low">
-              24
-            </strong>
-
-            <b className="transaction-status approved">
-              Approved
-            </b>
-
-          </div>
+                  <span>
+                    ₹
+                    {Number(
+                      transaction.amount || 0
+                    ).toLocaleString("en-IN")}
+                  </span>
 
 
-          {/* ROW 4 */}
-          <div className="risk-transaction-row">
+                  <span>
+                    {transaction.location || "—"}
+                  </span>
 
-            <span className="transaction-id">
-              #TXN-98238
-            </span>
 
-            <span>
-              ₹7,900
-            </span>
+                  <strong
+                    className={`transaction-risk ${riskClass}`}
+                  >
+                    {riskScore}
+                  </strong>
 
-            <span>
-              Bengaluru, IN
-            </span>
 
-            <strong className="transaction-risk low">
-              18
-            </strong>
+                  <b
+                    className={`transaction-status ${statusClass}`}
+                  >
+                    {transaction.status || "Unknown"}
+                  </b>
 
-            <b className="transaction-status approved">
-              Approved
-            </b>
+                </div>
+              )
+            })
 
-          </div>
+          )}
 
         </div>
 

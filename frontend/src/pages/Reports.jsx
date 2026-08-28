@@ -1,8 +1,22 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import {
+  getReports,
+  getRisk,
+  getDashboard,
+  getTransactions,
+} from "../api"
 
 function Reports() {
   const [dateRange, setDateRange] = useState("Last 30 Days")
   const [showDateMenu, setShowDateMenu] = useState(false)
+
+  const [reports, setReports] = useState([])
+  const [risk, setRisk] = useState(null)
+  const [dashboard, setDashboard] = useState(null)
+  const [transactions, setTransactions] = useState([])
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   const dateOptions = [
     "Last 24 Hours",
@@ -10,40 +24,140 @@ function Reports() {
     "Last 30 Days",
   ]
 
-  const reports = [
-    {
-      name: "Monthly Risk Intelligence Report",
-      type: "Risk Analysis",
-      period: "Aug 01 – Aug 28, 2026",
-      transactions: "42,891",
-      risk: "High",
-      generated: "2 hours ago",
-    },
-    {
-      name: "Fraud Detection Performance",
-      type: "Model Performance",
-      period: "Aug 01 – Aug 28, 2026",
-      transactions: "42,891",
-      risk: "Low",
-      generated: "Yesterday",
-    },
-    {
-      name: "Transaction Activity Report",
-      type: "Transaction Analysis",
-      period: "Aug 21 – Aug 28, 2026",
-      transactions: "12,483",
-      risk: "Medium",
-      generated: "Yesterday",
-    },
-    {
-      name: "Security Alert Summary",
-      type: "Alert Analysis",
-      period: "Aug 01 – Aug 28, 2026",
-      transactions: "1,284",
-      risk: "High",
-      generated: "2 days ago",
-    },
-  ]
+  // =====================================================
+  // LOAD REPORT DATA FROM BACKEND
+  // =====================================================
+
+  useEffect(() => {
+    const loadReportsData = async () => {
+      try {
+        setLoading(true)
+        setError("")
+
+        const [
+          reportsData,
+          riskData,
+          dashboardData,
+          transactionsData,
+        ] = await Promise.all([
+          getReports(),
+          getRisk(),
+          getDashboard(),
+          getTransactions(),
+        ])
+
+        setReports(reportsData)
+        setRisk(riskData)
+        setDashboard(dashboardData)
+        setTransactions(transactionsData)
+
+        setLoading(false)
+      } catch (err) {
+        console.error("Reports API error:", err)
+
+        setError(
+          "Unable to connect to NEXRA backend"
+        )
+
+        setLoading(false)
+      }
+    }
+
+    loadReportsData()
+  }, [])
+
+  // =====================================================
+  // CALCULATED DATA
+  // =====================================================
+
+  const totalTransactions =
+    dashboard?.total_transactions ??
+    transactions.length
+
+  const highRiskTransactions =
+    dashboard?.high_risk_transactions ??
+    risk?.high_risk ??
+    0
+
+  const detectionRate =
+    dashboard?.detection_accuracy ??
+    0
+
+  const totalRiskTransactions =
+    (risk?.high_risk ?? 0) +
+    (risk?.medium_risk ?? 0) +
+    (risk?.low_risk ?? 0)
+
+  const highRiskPercentage =
+    totalRiskTransactions > 0
+      ? (
+          (risk.high_risk /
+            totalRiskTransactions) *
+          100
+        ).toFixed(1)
+      : "0.0"
+
+  const mediumRiskPercentage =
+    totalRiskTransactions > 0
+      ? (
+          (risk.medium_risk /
+            totalRiskTransactions) *
+          100
+        ).toFixed(1)
+      : "0.0"
+
+  const lowRiskPercentage =
+    totalRiskTransactions > 0
+      ? (
+          (risk.low_risk /
+            totalRiskTransactions) *
+          100
+        ).toFixed(1)
+      : "0.0"
+
+  // =====================================================
+  // LOADING STATE
+  // =====================================================
+
+  if (loading) {
+    return (
+      <div className="page reports-page">
+
+        <div
+          style={{
+            padding: "80px",
+            textAlign: "center",
+            color: "#aaa",
+          }}
+        >
+          Loading NEXRA reports...
+        </div>
+
+      </div>
+    )
+  }
+
+  // =====================================================
+  // ERROR STATE
+  // =====================================================
+
+  if (error) {
+    return (
+      <div className="page reports-page">
+
+        <div
+          style={{
+            padding: "80px",
+            textAlign: "center",
+            color: "#ff6b6b",
+          }}
+        >
+          {error}
+        </div>
+
+      </div>
+    )
+  }
 
   return (
     <div className="page reports-page">
@@ -55,15 +169,19 @@ function Reports() {
       <div className="reports-header">
 
         <div className="reports-header-content">
+
           <p className="reports-eyebrow">
             ANALYTICS & REPORTING
           </p>
 
-          <h1>Reports</h1>
+          <h1>
+            Reports
+          </h1>
 
           <p className="reports-subtitle">
             Generate and review fraud intelligence reports
           </p>
+
         </div>
 
 
@@ -78,7 +196,10 @@ function Reports() {
               setShowDateMenu((prev) => !prev)
             }
           >
-            <span>{dateRange}</span>
+
+            <span>
+              {dateRange}
+            </span>
 
             <span
               className={`reports-date-arrow ${
@@ -87,6 +208,7 @@ function Reports() {
             >
               ⌄
             </span>
+
           </button>
 
 
@@ -94,25 +216,33 @@ function Reports() {
             <div className="reports-date-dropdown">
 
               {dateOptions.map((option) => (
+
                 <button
                   key={option}
                   type="button"
                   className={`reports-date-option ${
-                    dateRange === option ? "active" : ""
+                    dateRange === option
+                      ? "active"
+                      : ""
                   }`}
                   onClick={() => {
                     setDateRange(option)
                     setShowDateMenu(false)
                   }}
                 >
-                  <span>{option}</span>
+
+                  <span>
+                    {option}
+                  </span>
 
                   {dateRange === option && (
                     <span className="reports-check">
                       ✓
                     </span>
                   )}
+
                 </button>
+
               ))}
 
             </div>
@@ -130,48 +260,74 @@ function Reports() {
       <section className="reports-stat-grid">
 
         <div className="reports-stat-card">
-          <span>Reports Generated</span>
 
-          <strong>128</strong>
+          <span>
+            Reports Generated
+          </span>
+
+          <strong>
+            {reports.length}
+          </strong>
 
           <small className="reports-stat-positive">
-            +18.4% this month
+            From NEXRA backend
           </small>
+
         </div>
 
 
         <div className="reports-stat-card">
-          <span>Transactions Analyzed</span>
 
-          <strong>42.9K</strong>
+          <span>
+            Transactions Analyzed
+          </span>
+
+          <strong>
+            {Number(
+              totalTransactions
+            ).toLocaleString("en-IN")}
+          </strong>
 
           <small>
             Across all risk models
           </small>
+
         </div>
 
 
         <div className="reports-stat-card">
-          <span>High Risk Detected</span>
 
-          <strong>6,284</strong>
+          <span>
+            High Risk Detected
+          </span>
+
+          <strong>
+            {Number(
+              highRiskTransactions
+            ).toLocaleString("en-IN")}
+          </strong>
 
           <small>
-            14.7% of transactions
+            {highRiskPercentage}% of transactions
           </small>
+
         </div>
 
 
         <div className="reports-stat-card">
-          <span>Detection Rate</span>
+
+          <span>
+            Detection Rate
+          </span>
 
           <strong className="reports-stat-positive">
-            96.8%
+            {detectionRate}%
           </strong>
 
           <small className="reports-stat-positive">
-            +2.1% from last month
+            Current model performance
           </small>
+
         </div>
 
       </section>
@@ -193,19 +349,26 @@ function Reports() {
           <div className="reports-panel-header">
 
             <div>
-              <h2>Risk Summary</h2>
+
+              <h2>
+                Risk Summary
+              </h2>
 
               <p>
                 Transaction risk distribution
               </p>
+
             </div>
+
 
             <button
               type="button"
               className="reports-view-button"
             >
               {dateRange}
-              <span>⌄</span>
+              <span>
+                ⌄
+              </span>
             </button>
 
           </div>
@@ -213,13 +376,18 @@ function Reports() {
 
           <div className="reports-risk-content">
 
+
             {/* DONUT */}
 
             <div className="reports-donut">
 
               <div className="reports-donut-center">
 
-                <strong>42.9K</strong>
+                <strong>
+                  {Number(
+                    totalRiskTransactions
+                  ).toLocaleString("en-IN")}
+                </strong>
 
                 <span>
                   Transactions
@@ -234,33 +402,61 @@ function Reports() {
 
             <div className="reports-risk-legend">
 
+
               <div className="reports-risk-item">
+
                 <div className="reports-risk-label">
+
                   <i className="reports-risk-dot high"></i>
-                  <span>High Risk</span>
+
+                  <span>
+                    High Risk
+                  </span>
+
                 </div>
 
-                <strong>14.7%</strong>
+                <strong>
+                  {highRiskPercentage}%
+                </strong>
+
               </div>
 
 
               <div className="reports-risk-item">
+
                 <div className="reports-risk-label">
+
                   <i className="reports-risk-dot medium"></i>
-                  <span>Medium Risk</span>
+
+                  <span>
+                    Medium Risk
+                  </span>
+
                 </div>
 
-                <strong>31.5%</strong>
+                <strong>
+                  {mediumRiskPercentage}%
+                </strong>
+
               </div>
 
 
               <div className="reports-risk-item">
+
                 <div className="reports-risk-label">
+
                   <i className="reports-risk-dot low"></i>
-                  <span>Low Risk</span>
+
+                  <span>
+                    Low Risk
+                  </span>
+
                 </div>
 
-                <strong>53.8%</strong>
+                <strong>
+                  {lowRiskPercentage}%
+                </strong>
+
               </div>
 
             </div>
@@ -279,11 +475,15 @@ function Reports() {
           <div className="reports-panel-header">
 
             <div>
-              <h2>Generate Report</h2>
+
+              <h2>
+                Generate Report
+              </h2>
 
               <p>
                 Create a new intelligence report
               </p>
+
             </div>
 
           </div>
@@ -397,11 +597,15 @@ function Reports() {
         <div className="reports-panel-header">
 
           <div>
-            <h2>Recent Reports</h2>
+
+            <h2>
+              Recent Reports
+            </h2>
 
             <p>
               Previously generated intelligence reports
             </p>
+
           </div>
 
           <button
@@ -418,95 +622,137 @@ function Reports() {
 
         <div className="reports-table">
 
+
           {/* TABLE HEADER */}
 
           <div className="reports-table-head">
 
-            <span>Report</span>
-            <span>Period</span>
-            <span>Transactions</span>
-            <span>Risk Level</span>
-            <span>Generated</span>
-            <span>Action</span>
+            <span>
+              Report
+            </span>
+
+            <span>
+              Period
+            </span>
+
+            <span>
+              Transactions
+            </span>
+
+            <span>
+              Risk Level
+            </span>
+
+            <span>
+              Generated
+            </span>
+
+            <span>
+              Action
+            </span>
 
           </div>
 
 
           {/* TABLE ROWS */}
 
-          {reports.map((report) => (
+          {reports.length > 0 ? (
 
-            <div
-              className="reports-table-row"
-              key={report.name}
-            >
+            reports.map((report) => (
 
-              {/* REPORT NAME */}
+              <div
+                className="reports-table-row"
+                key={report.id}
+              >
 
-              <div className="reports-name">
 
-                <div className="reports-file-icon">
-                  ▤
+                {/* REPORT NAME */}
+
+                <div className="reports-name">
+
+                  <div className="reports-file-icon">
+                    ▤
+                  </div>
+
+                  <div className="reports-name-text">
+
+                    <strong>
+                      {report.name}
+                    </strong>
+
+                    <small>
+                      {report.type}
+                    </small>
+
+                  </div>
+
                 </div>
 
-                <div className="reports-name-text">
 
-                  <strong>
-                    {report.name}
-                  </strong>
+                {/* PERIOD */}
 
-                  <small>
-                    {report.type}
-                  </small>
+                <span className="reports-period">
+                  {report.date}
+                </span>
 
-                </div>
+
+                {/* TRANSACTIONS */}
+
+                <strong className="reports-transactions">
+                  {Number(
+                    totalTransactions
+                  ).toLocaleString("en-IN")}
+                </strong>
+
+
+                {/* RISK */}
+
+                <span
+                  className={`reports-risk-badge ${
+                    (
+                      report.risk ||
+                      "Medium"
+                    ).toLowerCase()
+                  }`}
+                >
+                  {report.risk || "Medium"}
+                </span>
+
+
+                {/* GENERATED */}
+
+                <span className="reports-generated">
+                  {report.status}
+                </span>
+
+
+                {/* ACTION */}
+
+                <button
+                  type="button"
+                  className="reports-download"
+                  title="Download report"
+                >
+                  ↓
+                </button>
 
               </div>
 
+            ))
 
-              {/* PERIOD */}
+          ) : (
 
-              <span className="reports-period">
-                {report.period}
-              </span>
-
-
-              {/* TRANSACTIONS */}
-
-              <strong className="reports-transactions">
-                {report.transactions}
-              </strong>
-
-
-              {/* RISK */}
-
-              <span
-                className={`reports-risk-badge ${report.risk.toLowerCase()}`}
-              >
-                {report.risk}
-              </span>
-
-
-              {/* GENERATED */}
-
-              <span className="reports-generated">
-                {report.generated}
-              </span>
-
-
-              {/* ACTION */}
-
-              <button
-                type="button"
-                className="reports-download"
-                title="Download report"
-              >
-                ↓
-              </button>
-
+            <div
+              style={{
+                padding: "40px",
+                textAlign: "center",
+                color: "#888",
+              }}
+            >
+              No reports available
             </div>
 
-          ))}
+          )}
 
         </div>
 
