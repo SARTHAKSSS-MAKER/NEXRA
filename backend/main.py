@@ -1,10 +1,28 @@
-from database import engine 
-from models import Base
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from database import engine, SessionLocal
+from models import Base, Transaction
+
 Base.metadata.create_all(bind=engine)
 
-from fastapi import FastAPI
-
 app = FastAPI(title="NEXRA API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173",
+                   "http://127.0.0.1:5173",
+                   ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.get("/")
 def root():
@@ -15,37 +33,58 @@ def health():
     return {"status": "healthy"}
 
 @app.get("/api/transactions")
-def get_transactions():
+def get_transactions(db: Session = Depends(get_db)):
+    transactions = db.query(Transaction).all()
+
+    if not transactions:
+        transactions = [
+            Transaction(
+                transaction_id="TXN-98241",
+                amount=84500,
+                location="Mumbai, IN",
+                risk_score=82,
+                status="Blocked"
+            ),
+            Transaction(
+                transaction_id="TXN-98240",
+                amount=12800,
+                location="Pune, IN",
+                risk_score=61,
+                status="Review"
+            ),
+            Transaction(
+                transaction_id="TXN-98239",
+                amount=3250,
+                location="Delhi, IN",
+                risk_score=24,
+                status="Approved"
+            ),
+            Transaction(
+                transaction_id="TXN-98238",
+                amount=7900,
+                location="Bengaluru, IN",
+                risk_score=18,
+                status="Approved"
+            )
+        ]
+
+        db.add_all(transactions)
+        db.commit()
+
+        for transaction in transactions:
+            db.refresh(transaction)
+
     return [
         {
-            "id": "TXN-98241",
-            "amount": 84500,
-            "location": "Mumbai, IN",
-            "risk_score": 82,
-            "status": "Blocked"
-        },
-        {
-            "id": "TXN-98240",
-            "amount": 12800,
-            "location": "Pune, IN",
-            "risk_score": 61,
-            "status": "Review"
-        },
-        {
-            "id": "TXN-98239",
-            "amount": 3250,
-            "location": "Delhi, IN",
-            "risk_score": 24,
-            "status": "Approved"
-        },
-        {
-            "id": "TXN-98238",
-            "amount": 7900,
-            "location": "Bengaluru, IN",
-            "risk_score": 18,
-            "status": "Approved"
+            "id": transaction.transaction_id,
+            "amount": transaction.amount,
+            "location": transaction.location,
+            "risk_score": transaction.risk_score,
+            "status": transaction.status
         }
+        for transaction in transactions
     ]
+
 @app.get("/api/alerts")
 def get_alerts():
     return [
@@ -74,6 +113,7 @@ def get_alerts():
             "status": "Open"
         }
     ]
+
 @app.get("/api/models")
 def get_models():
     return [
@@ -99,6 +139,7 @@ def get_models():
             "status": "Training"
         }
     ]
+
 @app.get("/api/reports")
 def get_reports():
     return [
@@ -124,6 +165,7 @@ def get_reports():
             "status": "Generated"
         }
     ]
+
 @app.get("/api/risk")
 def get_risk():
     return {
@@ -134,6 +176,7 @@ def get_risk():
         "low_risk": 24166,
         "risk_change": 12.6
     }
+
 @app.get("/api/dashboard")
 def get_dashboard():
     return {
@@ -144,6 +187,7 @@ def get_dashboard():
         "fraud_rate": 3.8,
         "blocked_transactions": 1842
     }
+
 @app.get("/api/settings")
 def get_settings():
     return {

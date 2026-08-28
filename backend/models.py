@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
-from datetime import datetime
+from sqlalchemy import Column, Integer, String, Float
 from database import Base
 
 class Transaction(Base):
@@ -8,16 +7,6 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     transaction_id = Column(String, unique=True, index=True)
     amount = Column(Float)
+    location = Column(String)
     risk_score = Column(Float)
     status = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-
-class Alert(Base):
-    __tablename__ = "alerts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String)
-    severity = Column(String)
-    status = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
