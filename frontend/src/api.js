@@ -1,7 +1,13 @@
 const API_URL = "http://127.0.0.1:8000"
 
-async function request(endpoint) {
-  const response = await fetch(`${API_URL}${endpoint}`)
+async function request(endpoint, options = {}) {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  })
 
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status}`)
@@ -41,23 +47,30 @@ export const getDashboard = () => {
 export const getSettings = () => {
   return request("/api/settings")
 }
+export const updateSettings = (settings) => {
+  return request("/api/settings", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+  })
+}
+
 export const getDashboardData = async () => {
   const [
     dashboard,
     transactions,
     alerts,
-    risk
+    risk,
   ] = await Promise.all([
     getDashboard(),
     getTransactions(),
     getAlerts(),
-    getRisk()
+    getRisk(),
   ])
 
   return {
     dashboard,
     transactions,
     alerts,
-    risk
+    risk,
   }
 }

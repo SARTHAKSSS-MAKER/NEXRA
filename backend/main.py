@@ -1,5 +1,6 @@
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal
 from models import Base, Transaction
@@ -196,4 +197,18 @@ def get_settings():
         "auto_block_high_risk": False,
         "risk_threshold": 80,
         "model_version": "v2.4.1"
+    }
+class SettingsUpdate(BaseModel):
+    notifications: bool
+    real_time_monitoring: bool
+    auto_block_high_risk: bool
+    risk_threshold: int
+    model_version: str
+
+
+@app.put("/api/settings")
+def update_settings(settings: SettingsUpdate):
+    return {
+        "message": "Settings updated successfully",
+        "settings": settings.model_dump()
     }

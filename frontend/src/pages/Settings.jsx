@@ -1,29 +1,111 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { getSettings, updateSettings } from "../api"
 
 function Settings() {
   const [settings, setSettings] = useState({
-    fraudDetection: true,
-    highRiskAlerts: true,
-    deviceDetection: true,
-    behaviorMonitoring: true,
-    autoInvestigation: true,
-    criticalAlerts: true,
-    dailySummary: true,
-    modelReports: true,
-    securityNotifications: true,
-    twoFactor: true,
-    compactDashboard: false,
-    animations: true,
+    notifications: true,
+    real_time_monitoring: true,
+    auto_block_high_risk: false,
+    risk_threshold: 80,
+    model_version: "v2.4.1",
   })
 
-  const [sensitivity, setSensitivity] = useState("High")
-  const [timeout, setTimeout] = useState("30 Minutes")
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState("")
+  const [error, setError] = useState("")
 
+  // Load settings from backend
+  useEffect(() => {
+    getSettings()
+      .then((data) => {
+        setSettings(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Settings API error:", err)
+        setError("Unable to load NEXRA settings")
+        setLoading(false)
+      })
+  }, [])
+
+  // Toggle setting
   const toggleSetting = (key) => {
     setSettings((prev) => ({
       ...prev,
       [key]: !prev[key],
     }))
+
+    setMessage("")
+  }
+
+  // Update input/select
+  const handleChange = (key, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
+
+    setMessage("")
+  }
+
+  // Save settings to backend
+  const handleSave = async () => {
+    setSaving(true)
+    setMessage("")
+    setError("")
+
+    try {
+      const dataToSend = {
+        notifications: settings.notifications,
+        real_time_monitoring: settings.real_time_monitoring,
+        auto_block_high_risk: settings.auto_block_high_risk,
+        risk_threshold: Number(settings.risk_threshold),
+        model_version: settings.model_version,
+      }
+
+      const response = await updateSettings(dataToSend)
+
+      setSettings(response.settings)
+      setMessage("Settings saved successfully")
+    } catch (err) {
+      console.error("Settings update error:", err)
+      setError("Unable to save settings")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="page settings-page">
+        <div
+          style={{
+            padding: "60px",
+            textAlign: "center",
+            color: "#aaa",
+          }}
+        >
+          Loading NEXRA settings...
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !settings) {
+    return (
+      <div className="page settings-page">
+        <div
+          style={{
+            padding: "60px",
+            textAlign: "center",
+            color: "#ff6b6b",
+          }}
+        >
+          {error}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -52,7 +134,10 @@ function Settings() {
             <p>Your NEXRA account information</p>
           </div>
 
-          <button className="settings-outline-btn">
+          <button
+            type="button"
+            className="settings-outline-btn"
+          >
             Edit Profile
           </button>
         </div>
@@ -101,7 +186,7 @@ function Settings() {
       </section>
 
 
-      {/* TWO COLUMN SETTINGS */}
+      {/* SETTINGS GRID */}
       <div className="settings-grid">
 
 
@@ -124,29 +209,28 @@ function Settings() {
             <SettingToggle
               title="Real-time Fraud Detection"
               description="Analyze transactions as they occur"
-              enabled={settings.fraudDetection}
-              onClick={() => toggleSetting("fraudDetection")}
+              enabled={settings.real_time_monitoring}
+              onClick={() =>
+                toggleSetting("real_time_monitoring")
+              }
             />
 
             <SettingToggle
               title="High-Risk Alerts"
               description="Receive alerts for high-risk transactions"
-              enabled={settings.highRiskAlerts}
-              onClick={() => toggleSetting("highRiskAlerts")}
+              enabled={settings.notifications}
+              onClick={() =>
+                toggleSetting("notifications")
+              }
             />
 
             <SettingToggle
-              title="New Device Detection"
-              description="Detect transactions from unfamiliar devices"
-              enabled={settings.deviceDetection}
-              onClick={() => toggleSetting("deviceDetection")}
-            />
-
-            <SettingToggle
-              title="Behavior Monitoring"
-              description="Monitor abnormal user behavior patterns"
-              enabled={settings.behaviorMonitoring}
-              onClick={() => toggleSetting("behaviorMonitoring")}
+              title="Automatic High-Risk Blocking"
+              description="Automatically block transactions above the risk threshold"
+              enabled={settings.auto_block_high_risk}
+              onClick={() =>
+                toggleSetting("auto_block_high_risk")
+              }
             />
 
           </div>
@@ -172,51 +256,59 @@ function Settings() {
 
             <div className="setting-field">
 
-              <label>Risk Sensitivity</label>
-
-              <select
-                value={sensitivity}
-                onChange={(e) => setSensitivity(e.target.value)}
-              >
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-                <option>Very High</option>
-              </select>
-
-            </div>
-
-
-            <div className="setting-field">
-
-              <label>Transaction Threshold</label>
-
-              <div className="input-with-prefix">
-                <span>₹</span>
-
-                <input
-                  type="number"
-                  defaultValue="50000"
-                />
-              </div>
-
-            </div>
-
-
-            <div className="setting-field">
-
-              <label>Model Confidence Threshold</label>
+              <label>
+                Risk Threshold
+              </label>
 
               <div className="input-with-suffix">
+
                 <input
                   type="number"
-                  defaultValue="85"
                   min="0"
                   max="100"
+                  value={settings.risk_threshold}
+                  onChange={(e) =>
+                    handleChange(
+                      "risk_threshold",
+                      e.target.value
+                    )
+                  }
                 />
 
-                <span>%</span>
+                <span>/100</span>
+
               </div>
+
+            </div>
+
+
+            <div className="setting-field">
+
+              <label>
+                Model Version
+              </label>
+
+              <select
+                value={settings.model_version}
+                onChange={(e) =>
+                  handleChange(
+                    "model_version",
+                    e.target.value
+                  )
+                }
+              >
+                <option value="v2.4.1">
+                  v2.4.1
+                </option>
+
+                <option value="v2.4.0">
+                  v2.4.0
+                </option>
+
+                <option value="v2.3.8">
+                  v2.3.8
+                </option>
+              </select>
 
             </div>
 
@@ -224,8 +316,10 @@ function Settings() {
             <SettingToggle
               title="Automatic Investigation"
               description="Automatically investigate critical transactions"
-              enabled={settings.autoInvestigation}
-              onClick={() => toggleSetting("autoInvestigation")}
+              enabled={settings.auto_block_high_risk}
+              onClick={() =>
+                toggleSetting("auto_block_high_risk")
+              }
             />
 
           </div>
@@ -250,31 +344,21 @@ function Settings() {
           <div className="settings-list">
 
             <SettingToggle
-              title="Critical Alerts"
-              description="Immediate notifications for critical threats"
-              enabled={settings.criticalAlerts}
-              onClick={() => toggleSetting("criticalAlerts")}
-            />
-
-            <SettingToggle
-              title="Daily Risk Summary"
-              description="Receive a daily fraud intelligence summary"
-              enabled={settings.dailySummary}
-              onClick={() => toggleSetting("dailySummary")}
-            />
-
-            <SettingToggle
-              title="Model Performance Reports"
-              description="Receive AI model performance updates"
-              enabled={settings.modelReports}
-              onClick={() => toggleSetting("modelReports")}
-            />
-
-            <SettingToggle
               title="Security Notifications"
-              description="Important account and security events"
-              enabled={settings.securityNotifications}
-              onClick={() => toggleSetting("securityNotifications")}
+              description="Receive important security events"
+              enabled={settings.notifications}
+              onClick={() =>
+                toggleSetting("notifications")
+              }
+            />
+
+            <SettingToggle
+              title="Real-time Monitoring"
+              description="Receive updates while transactions are analyzed"
+              enabled={settings.real_time_monitoring}
+              onClick={() =>
+                toggleSetting("real_time_monitoring")
+              }
             />
 
           </div>
@@ -299,10 +383,12 @@ function Settings() {
           <div className="settings-list">
 
             <SettingToggle
-              title="Two-Factor Authentication"
-              description="Protect your account with an additional verification step"
-              enabled={settings.twoFactor}
-              onClick={() => toggleSetting("twoFactor")}
+              title="Automatic High-Risk Blocking"
+              description="Block transactions that exceed the configured risk threshold"
+              enabled={settings.auto_block_high_risk}
+              onClick={() =>
+                toggleSetting("auto_block_high_risk")
+              }
             />
 
 
@@ -316,7 +402,7 @@ function Settings() {
                 </span>
               </div>
 
-              <button>
+              <button type="button">
                 Change
               </button>
 
@@ -333,26 +419,9 @@ function Settings() {
                 </span>
               </div>
 
-              <button>
+              <button type="button">
                 View
               </button>
-
-            </div>
-
-
-            <div className="setting-field">
-
-              <label>Session Timeout</label>
-
-              <select
-                value={timeout}
-                onChange={(e) => setTimeout(e.target.value)}
-              >
-                <option>15 Minutes</option>
-                <option>30 Minutes</option>
-                <option>1 Hour</option>
-                <option>4 Hours</option>
-              </select>
 
             </div>
 
@@ -384,15 +453,15 @@ function Settings() {
           <SettingToggle
             title="Compact Dashboard"
             description="Reduce spacing for a denser workspace"
-            enabled={settings.compactDashboard}
-            onClick={() => toggleSetting("compactDashboard")}
+            enabled={false}
+            onClick={() => {}}
           />
 
           <SettingToggle
             title="Interface Animations"
             description="Enable subtle interface transitions"
-            enabled={settings.animations}
-            onClick={() => toggleSetting("animations")}
+            enabled={true}
+            onClick={() => {}}
           />
 
         </div>
@@ -404,15 +473,27 @@ function Settings() {
       <div className="settings-save-bar">
 
         <div>
-          <strong>Settings updated</strong>
+
+          <strong>
+            {message || "Settings ready"}
+          </strong>
 
           <span>
-            Changes are applied automatically
+            {error
+              ? error
+              : "Changes are saved to the NEXRA backend"}
           </span>
+
         </div>
 
-        <button className="settings-save-btn">
-          Save Changes
+
+        <button
+          type="button"
+          className="settings-save-btn"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? "Saving..." : "Save Changes"}
         </button>
 
       </div>
@@ -435,16 +516,22 @@ function SettingToggle({
 
       <div className="setting-toggle-text">
 
-        <strong>{title}</strong>
+        <strong>
+          {title}
+        </strong>
 
-        <span>{description}</span>
+        <span>
+          {description}
+        </span>
 
       </div>
 
 
       <button
         type="button"
-        className={`toggle ${enabled ? "active" : ""}`}
+        className={`toggle ${
+          enabled ? "active" : ""
+        }`}
         onClick={onClick}
         aria-label={title}
       >
