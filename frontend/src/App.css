@@ -1224,3 +1224,484 @@ button {
     min-height: 125px;
   }
 }
+/* =========================================================
+   ALERTS PAGE
+   ========================================================= */
+
+.alerts-page {
+  position: relative;
+}
+
+.alert-filter-wrapper {
+  position: relative;
+  z-index: 20;
+}
+
+.alert-filter-button {
+  min-width: 145px;
+  height: 38px;
+  padding: 0 13px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  border: 1px solid #292823;
+  border-radius: 8px;
+
+  background: #111110;
+  color: #aaa49a;
+
+  font-size: 11px;
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.alert-filter-button:hover {
+  border-color: #3a372f;
+  background: #151513;
+  color: #d5cec2;
+}
+
+.filter-arrow {
+  color: #77736c;
+}
+
+
+/* =========================================================
+   ALERT SUMMARY
+   ========================================================= */
+
+.alert-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 13px;
+}
+
+.alert-summary-card {
+  min-height: 135px;
+  padding: 18px;
+
+  border: 1px solid #272620;
+  border-radius: 10px;
+
+  background: linear-gradient(
+    145deg,
+    #151514,
+    #111110
+  );
+}
+
+.summary-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  color: #858078;
+  font-size: 10px;
+}
+
+.summary-top i {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+  background: #a66f34;
+}
+
+.alert-summary-card strong {
+  display: block;
+
+  margin-top: 14px;
+
+  color: #ece7de;
+
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.alert-summary-card small {
+  display: block;
+
+  margin-top: 7px;
+
+  color: #65615b;
+  font-size: 9px;
+}
+
+.alert-summary-card.critical-card .summary-top i {
+  background: #b65f46;
+}
+
+.alert-summary-card.critical-card strong {
+  color: #d47a5d;
+}
+
+.alert-summary-card.safe-card .summary-top i {
+  background: #718b67;
+}
+
+.alert-summary-card.safe-card strong {
+  color: #9aad8c;
+}
+
+
+/* =========================================================
+   ALERT PANEL
+   ========================================================= */
+
+.alerts-panel {
+  margin-top: 13px;
+  overflow: hidden;
+}
+
+.alerts-panel-header {
+  padding-bottom: 17px;
+}
+
+.alert-count {
+  padding: 5px 9px;
+
+  border: 1px solid #292823;
+  border-radius: 6px;
+
+  color: #77736c;
+  background: #111110;
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   ALERT TABLE
+   ========================================================= */
+
+.alerts-table-head,
+.alert-table-row {
+  display: grid;
+
+  grid-template-columns:
+    2.3fr
+    1.2fr
+    1fr
+    1.15fr
+    0.85fr
+    0.95fr
+    0.8fr;
+
+  align-items: center;
+}
+
+.alerts-table-head {
+  min-height: 42px;
+
+  padding: 0 20px;
+
+  border-top: 1px solid #22221f;
+  border-bottom: 1px solid #22221f;
+
+  color: #5f5c56;
+
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.alert-table-row {
+  min-height: 78px;
+
+  padding: 0 20px;
+
+  border-bottom: 1px solid #22221f;
+
+  transition: background 0.2s ease;
+}
+
+.alert-table-row:hover {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+
+/* =========================================================
+   ALERT MAIN
+   ========================================================= */
+
+.alert-main {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  min-width: 0;
+}
+
+.alert-icon {
+  width: 27px;
+  height: 27px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 7px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.alert-icon.critical {
+  color: #d37a5b;
+  border: 1px solid rgba(190, 91, 59, 0.25);
+  background: rgba(170, 71, 44, 0.10);
+}
+
+.alert-icon.high {
+  color: #c87955;
+  border: 1px solid rgba(190, 91, 59, 0.22);
+  background: rgba(170, 71, 44, 0.08);
+}
+
+.alert-icon.medium {
+  color: #b99a60;
+  border: 1px solid rgba(177, 136, 70, 0.22);
+  background: rgba(177, 136, 70, 0.07);
+}
+
+.alert-icon.low {
+  color: #88a878;
+  border: 1px solid rgba(115, 143, 103, 0.2);
+  background: rgba(115, 143, 103, 0.07);
+}
+
+.alert-main strong {
+  display: block;
+
+  overflow: hidden;
+
+  color: #c5bfb5;
+
+  font-size: 10px;
+  font-weight: 500;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.alert-main small {
+  display: block;
+
+  max-width: 260px;
+
+  margin-top: 4px;
+
+  overflow: hidden;
+
+  color: #5f5c56;
+
+  font-size: 8px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   USER / AMOUNT
+   ========================================================= */
+
+.alert-user {
+  color: #a19b92;
+  font-size: 10px;
+}
+
+.alert-amount {
+  color: #c8c1b7;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+
+/* =========================================================
+   RISK SCORE
+   ========================================================= */
+
+.alert-risk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-risk-bar {
+  width: 48px;
+  height: 4px;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+
+  background: #292823;
+}
+
+.alert-risk-bar i {
+  display: block;
+
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: linear-gradient(
+    90deg,
+    #765029,
+    #c18a3f
+  );
+}
+
+.alert-risk strong {
+  color: #aaa49a;
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   LEVEL
+   ========================================================= */
+
+.alert-level,
+.alert-status {
+  width: max-content;
+
+  padding: 5px 8px;
+
+  border-radius: 5px;
+
+  font-size: 8px;
+}
+
+.alert-level.critical {
+  color: #d27c5c;
+
+  border: 1px solid rgba(190, 91, 59, 0.28);
+
+  background: rgba(170, 71, 44, 0.10);
+}
+
+.alert-level.high {
+  color: #c97956;
+
+  border: 1px solid rgba(190, 91, 59, 0.23);
+
+  background: rgba(170, 71, 44, 0.08);
+}
+
+.alert-level.medium {
+  color: #b99a60;
+
+  border: 1px solid rgba(177, 136, 70, 0.22);
+
+  background: rgba(177, 136, 70, 0.07);
+}
+
+.alert-level.low {
+  color: #88a878;
+
+  border: 1px solid rgba(115, 143, 103, 0.2);
+
+  background: rgba(115, 143, 103, 0.07);
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.alert-status {
+  color: #9c968d;
+  border: 1px solid #292823;
+  background: #151513;
+}
+
+.alert-status.open {
+  color: #d17a5b;
+  border-color: rgba(190, 91, 59, 0.2);
+}
+
+.alert-status.investigating {
+  color: #b99a60;
+  border-color: rgba(177, 136, 70, 0.2);
+}
+
+.alert-status.review {
+  color: #aaa49a;
+}
+
+.alert-status.resolved {
+  color: #88a878;
+  border-color: rgba(115, 143, 103, 0.2);
+}
+
+
+/* =========================================================
+   TIME
+   ========================================================= */
+
+.alert-time {
+  color: #65615b;
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+  .alert-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .alerts-table-head,
+  .alert-table-row {
+    grid-template-columns:
+      2fr
+      1fr
+      0.9fr
+      1fr
+      0.8fr
+      0.9fr
+      0.7fr;
+  }
+
+}
+
+@media (max-width: 800px) {
+
+  .alert-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .alerts-panel {
+    overflow-x: auto;
+  }
+
+  .alerts-table-head,
+  .alert-table-row {
+    min-width: 900px;
+  }
+
+}
+
+@media (max-width: 560px) {
+
+  .alert-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-filter-button {
+    min-width: 130px;
+  }
+
+}
