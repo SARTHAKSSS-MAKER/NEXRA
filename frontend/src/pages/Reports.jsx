@@ -48,32 +48,40 @@ function Reports() {
   return (
     <div className="page reports-page">
 
-      {/* PAGE HEADING */}
-      <div className="page-heading">
+      {/* =====================================================
+          PAGE HEADER
+          ===================================================== */}
 
-        <div>
-          <p className="eyebrow">ANALYTICS & REPORTING</p>
+      <div className="reports-header">
+
+        <div className="reports-header-content">
+          <p className="reports-eyebrow">
+            ANALYTICS & REPORTING
+          </p>
 
           <h1>Reports</h1>
 
-          <p className="subtitle">
+          <p className="reports-subtitle">
             Generate and review fraud intelligence reports
           </p>
         </div>
 
 
         {/* DATE SELECTOR */}
-        <div className="report-date-wrapper">
+
+        <div className="reports-date-wrapper">
 
           <button
             type="button"
-            className="date-selector"
-            onClick={() => setShowDateMenu((prev) => !prev)}
+            className="reports-date-selector"
+            onClick={() =>
+              setShowDateMenu((prev) => !prev)
+            }
           >
             <span>{dateRange}</span>
 
             <span
-              className={`date-arrow ${
+              className={`reports-date-arrow ${
                 showDateMenu ? "open" : ""
               }`}
             >
@@ -83,13 +91,13 @@ function Reports() {
 
 
           {showDateMenu && (
-            <div className="report-date-dropdown">
+            <div className="reports-date-dropdown">
 
               {dateOptions.map((option) => (
                 <button
                   key={option}
                   type="button"
-                  className={`report-date-option ${
+                  className={`reports-date-option ${
                     dateRange === option ? "active" : ""
                   }`}
                   onClick={() => {
@@ -100,7 +108,9 @@ function Reports() {
                   <span>{option}</span>
 
                   {dateRange === option && (
-                    <span>✓</span>
+                    <span className="reports-check">
+                      ✓
+                    </span>
                   )}
                 </button>
               ))}
@@ -113,43 +123,74 @@ function Reports() {
       </div>
 
 
-      {/* REPORT OVERVIEW */}
-      <section className="report-overview">
+      {/* =====================================================
+          REPORT STATISTICS
+          ===================================================== */}
 
-        <div className="report-stat">
+      <section className="reports-stat-grid">
+
+        <div className="reports-stat-card">
           <span>Reports Generated</span>
+
           <strong>128</strong>
-          <small>+18.4% this month</small>
+
+          <small className="reports-stat-positive">
+            +18.4% this month
+          </small>
         </div>
 
-        <div className="report-stat">
+
+        <div className="reports-stat-card">
           <span>Transactions Analyzed</span>
+
           <strong>42.9K</strong>
-          <small>Across all risk models</small>
+
+          <small>
+            Across all risk models
+          </small>
         </div>
 
-        <div className="report-stat">
+
+        <div className="reports-stat-card">
           <span>High Risk Detected</span>
+
           <strong>6,284</strong>
-          <small>14.7% of transactions</small>
+
+          <small>
+            14.7% of transactions
+          </small>
         </div>
 
-        <div className="report-stat">
+
+        <div className="reports-stat-card">
           <span>Detection Rate</span>
-          <strong className="positive">96.8%</strong>
-          <small>+2.1% from last month</small>
+
+          <strong className="reports-stat-positive">
+            96.8%
+          </strong>
+
+          <small className="reports-stat-positive">
+            +2.1% from last month
+          </small>
         </div>
 
       </section>
 
 
-      {/* RISK SUMMARY + QUICK REPORT */}
-      <div className="grid-two report-middle">
+      {/* =====================================================
+          MIDDLE SECTION
+          ===================================================== */}
 
-        {/* RISK SUMMARY */}
-        <section className="panel risk-summary-panel">
+      <div className="reports-middle-grid">
 
-          <div className="panel-header">
+
+        {/* =================================================
+            RISK SUMMARY
+            ================================================= */}
+
+        <section className="reports-panel reports-risk-panel">
+
+          <div className="reports-panel-header">
 
             <div>
               <h2>Risk Summary</h2>
@@ -159,42 +200,66 @@ function Reports() {
               </p>
             </div>
 
-            <button className="view-all">
-              {dateRange} ▾
+            <button
+              type="button"
+              className="reports-view-button"
+            >
+              {dateRange}
+              <span>⌄</span>
             </button>
 
           </div>
 
 
-          <div className="risk-summary-body">
+          <div className="reports-risk-content">
 
-            <div className="report-donut">
+            {/* DONUT */}
 
-              <div className="report-donut-center">
+            <div className="reports-donut">
+
+              <div className="reports-donut-center">
+
                 <strong>42.9K</strong>
-                <span>Transactions</span>
+
+                <span>
+                  Transactions
+                </span>
+
               </div>
 
             </div>
 
 
-            <div className="report-legend">
+            {/* LEGEND */}
 
-              <div>
-                <i className="high"></i>
-                <span>High Risk</span>
+            <div className="reports-risk-legend">
+
+              <div className="reports-risk-item">
+                <div className="reports-risk-label">
+                  <i className="reports-risk-dot high"></i>
+                  <span>High Risk</span>
+                </div>
+
                 <strong>14.7%</strong>
               </div>
 
-              <div>
-                <i className="medium"></i>
-                <span>Medium Risk</span>
+
+              <div className="reports-risk-item">
+                <div className="reports-risk-label">
+                  <i className="reports-risk-dot medium"></i>
+                  <span>Medium Risk</span>
+                </div>
+
                 <strong>31.5%</strong>
               </div>
 
-              <div>
-                <i className="low"></i>
-                <span>Low Risk</span>
+
+              <div className="reports-risk-item">
+                <div className="reports-risk-label">
+                  <i className="reports-risk-dot low"></i>
+                  <span>Low Risk</span>
+                </div>
+
                 <strong>53.8%</strong>
               </div>
 
@@ -205,10 +270,13 @@ function Reports() {
         </section>
 
 
-        {/* QUICK GENERATE */}
-        <section className="panel generate-panel">
+        {/* =================================================
+            GENERATE REPORT
+            ================================================= */}
 
-          <div className="panel-header">
+        <section className="reports-panel reports-generate-panel">
+
+          <div className="reports-panel-header">
 
             <div>
               <h2>Generate Report</h2>
@@ -221,41 +289,96 @@ function Reports() {
           </div>
 
 
-          <div className="generate-content">
+          <div className="reports-generate-content">
 
-            <button className="generate-option">
-              <div className="generate-icon">◈</div>
 
-              <div>
-                <strong>Risk Intelligence</strong>
-                <span>Complete risk overview</span>
+            {/* RISK INTELLIGENCE */}
+
+            <button
+              type="button"
+              className="reports-generate-option"
+            >
+
+              <div className="reports-generate-icon">
+                ◈
               </div>
 
-              <b>→</b>
+              <div className="reports-generate-text">
+
+                <strong>
+                  Risk Intelligence
+                </strong>
+
+                <span>
+                  Complete risk overview
+                </span>
+
+              </div>
+
+              <b className="reports-generate-arrow">
+                →
+              </b>
+
             </button>
 
 
-            <button className="generate-option">
-              <div className="generate-icon">◫</div>
+            {/* TRANSACTION ANALYSIS */}
 
-              <div>
-                <strong>Transaction Analysis</strong>
-                <span>Detailed transaction activity</span>
+            <button
+              type="button"
+              className="reports-generate-option"
+            >
+
+              <div className="reports-generate-icon">
+                ◫
               </div>
 
-              <b>→</b>
+              <div className="reports-generate-text">
+
+                <strong>
+                  Transaction Analysis
+                </strong>
+
+                <span>
+                  Detailed transaction activity
+                </span>
+
+              </div>
+
+              <b className="reports-generate-arrow">
+                →
+              </b>
+
             </button>
 
 
-            <button className="generate-option">
-              <div className="generate-icon">◇</div>
+            {/* MODEL PERFORMANCE */}
 
-              <div>
-                <strong>Model Performance</strong>
-                <span>AI model evaluation</span>
+            <button
+              type="button"
+              className="reports-generate-option"
+            >
+
+              <div className="reports-generate-icon">
+                ◇
               </div>
 
-              <b>→</b>
+              <div className="reports-generate-text">
+
+                <strong>
+                  Model Performance
+                </strong>
+
+                <span>
+                  AI model evaluation
+                </span>
+
+              </div>
+
+              <b className="reports-generate-arrow">
+                →
+              </b>
+
             </button>
 
           </div>
@@ -265,10 +388,13 @@ function Reports() {
       </div>
 
 
-      {/* RECENT REPORTS */}
-      <section className="panel recent-reports-panel">
+      {/* =====================================================
+          RECENT REPORTS
+          ===================================================== */}
 
-        <div className="panel-header">
+      <section className="reports-panel reports-recent-panel">
+
+        <div className="reports-panel-header">
 
           <div>
             <h2>Recent Reports</h2>
@@ -278,75 +404,103 @@ function Reports() {
             </p>
           </div>
 
-          <button className="view-all">
+          <button
+            type="button"
+            className="reports-view-button reports-archive-button"
+          >
             View Archive →
           </button>
 
         </div>
 
 
+        {/* TABLE */}
+
         <div className="reports-table">
 
+          {/* TABLE HEADER */}
+
           <div className="reports-table-head">
+
             <span>Report</span>
             <span>Period</span>
             <span>Transactions</span>
             <span>Risk Level</span>
             <span>Generated</span>
             <span>Action</span>
+
           </div>
 
+
+          {/* TABLE ROWS */}
 
           {reports.map((report) => (
 
             <div
-              className="report-row"
+              className="reports-table-row"
               key={report.name}
             >
 
-              {/* REPORT */}
-              <div className="report-name">
+              {/* REPORT NAME */}
 
-                <div className="report-file-icon">
+              <div className="reports-name">
+
+                <div className="reports-file-icon">
                   ▤
                 </div>
 
-                <div>
-                  <strong>{report.name}</strong>
-                  <small>{report.type}</small>
+                <div className="reports-name-text">
+
+                  <strong>
+                    {report.name}
+                  </strong>
+
+                  <small>
+                    {report.type}
+                  </small>
+
                 </div>
 
               </div>
 
 
               {/* PERIOD */}
-              <span className="report-period">
+
+              <span className="reports-period">
                 {report.period}
               </span>
 
 
               {/* TRANSACTIONS */}
-              <strong className="report-transactions">
+
+              <strong className="reports-transactions">
                 {report.transactions}
               </strong>
 
 
               {/* RISK */}
+
               <span
-                className={`report-risk ${report.risk.toLowerCase()}`}
+                className={`reports-risk-badge ${report.risk.toLowerCase()}`}
               >
                 {report.risk}
               </span>
 
 
               {/* GENERATED */}
-              <span className="report-generated">
+
+              <span className="reports-generated">
                 {report.generated}
               </span>
 
 
               {/* ACTION */}
-              <button className="report-download">
+
+              <button
+                type="button"
+                className="reports-download"
+                title="Download report"
+              >
                 ↓
               </button>
 
