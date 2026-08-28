@@ -1,191 +1,446 @@
 function RiskMonitor() {
   return (
     <div className="risk-monitor-page">
-      <div className="page-heading">
+
+      {/* PAGE HEADER */}
+      <div className="risk-monitor-heading">
         <div>
-          <p className="eyebrow">LIVE RISK ANALYSIS</p>
+          <p className="risk-monitor-eyebrow">LIVE RISK ANALYSIS</p>
+
           <h1>Risk Monitor</h1>
-          <p className="subtitle">
+
+          <p className="risk-monitor-subtitle">
             Monitor transactions and identify high-risk activity in real time
           </p>
         </div>
 
-        <div className="monitor-status">
-          <span className="live-dot"></span>
-          System Live
+        <div className="risk-monitor-status">
+          <span className="risk-live-dot"></span>
+          <span>System Live</span>
         </div>
       </div>
 
-      <section className="monitor-stats">
-        <div className="monitor-card">
-          <span>Current Risk Score</span>
-          <strong>82<span>/100</span></strong>
-          <small className="danger-text">↑ 8.4% from yesterday</small>
+
+      {/* STAT CARDS */}
+      <section className="risk-monitor-stats">
+
+        <div className="risk-stat-card">
+          <span className="risk-stat-label">Current Risk Score</span>
+
+          <strong className="risk-stat-value">
+            82<span>/100</span>
+          </strong>
+
+          <small className="risk-danger-text">
+            ↑ 8.4% from yesterday
+          </small>
         </div>
 
-        <div className="monitor-card">
-          <span>Transactions Scanned</span>
-          <strong>1,389</strong>
+
+        <div className="risk-stat-card">
+          <span className="risk-stat-label">Transactions Scanned</span>
+
+          <strong className="risk-stat-value">
+            1,389
+          </strong>
+
           <small>Last 24 hours</small>
         </div>
 
-        <div className="monitor-card">
-          <span>High Risk Detected</span>
-          <strong>347</strong>
-          <small className="danger-text">25% of transactions</small>
+
+        <div className="risk-stat-card">
+          <span className="risk-stat-label">High Risk Detected</span>
+
+          <strong className="risk-stat-value">
+            347
+          </strong>
+
+          <small className="risk-danger-text">
+            25% of transactions
+          </small>
         </div>
 
-        <div className="monitor-card">
-          <span>Detection Accuracy</span>
-          <strong>95.1%</strong>
-          <small className="safe-text">↑ 3.1% improvement</small>
+
+        <div className="risk-stat-card">
+          <span className="risk-stat-label">Detection Accuracy</span>
+
+          <strong className="risk-stat-value risk-positive">
+            95.1%
+          </strong>
+
+          <small className="risk-safe-text">
+            ↑ 3.1% improvement
+          </small>
         </div>
+
       </section>
 
-      <section className="monitor-grid">
-        <div className="panel live-analysis">
-          <div className="panel-header">
+
+      {/* LIVE ANALYSIS + ACTIVE EVENTS */}
+      <section className="risk-monitor-main-grid">
+
+
+        {/* LIVE RISK ANALYSIS */}
+        <div className="risk-monitor-panel">
+
+          <div className="risk-monitor-panel-header">
+
             <div>
               <h2>Live Risk Analysis</h2>
-              <p>Real-time transaction monitoring</p>
+
+              <p>
+                Real-time transaction monitoring
+              </p>
             </div>
 
-            <span className="analysis-live">
-              <i></i> LIVE
+            <span className="risk-analysis-live">
+              <i></i>
+              LIVE
             </span>
+
           </div>
 
-          <div className="risk-meter">
-            <div className="meter-circle">
-              <strong>82</strong>
-              <span>HIGH RISK</span>
+
+          {/* RISK METER */}
+          <div className="risk-meter-wrapper">
+
+            <div className="risk-meter-circle">
+
+              <div className="risk-meter-inner">
+                <strong>82</strong>
+                <span>HIGH RISK</span>
+              </div>
+
             </div>
+
           </div>
 
-          <div className="risk-summary">
-            <div>
-              <span>Transaction Velocity</span>
-              <strong>High</strong>
+
+          {/* RISK FACTORS */}
+          <div className="risk-factor-list">
+
+            <div className="risk-factor">
+              <div>
+                <span>Transaction Velocity</span>
+                <small>Activity frequency</small>
+              </div>
+
+              <strong className="factor-high">
+                High
+              </strong>
             </div>
 
-            <div>
-              <span>Location Anomaly</span>
-              <strong>Detected</strong>
+
+            <div className="risk-factor">
+              <div>
+                <span>Location Anomaly</span>
+                <small>Geographic behaviour</small>
+              </div>
+
+              <strong className="factor-danger">
+                Detected
+              </strong>
             </div>
 
-            <div>
-              <span>Device Trust</span>
-              <strong>Medium</strong>
+
+            <div className="risk-factor">
+              <div>
+                <span>Device Trust</span>
+                <small>Device reputation</small>
+              </div>
+
+              <strong className="factor-medium">
+                Medium
+              </strong>
             </div>
+
           </div>
+
         </div>
 
-        <div className="panel active-alerts">
-          <div className="panel-header">
+
+        {/* ACTIVE RISK EVENTS */}
+        <div className="risk-monitor-panel">
+
+          <div className="risk-monitor-panel-header">
+
             <div>
               <h2>Active Risk Events</h2>
-              <p>Events requiring attention</p>
+
+              <p>
+                Events requiring attention
+              </p>
             </div>
 
-            <span className="event-count">4 Active</span>
+            <span className="risk-event-count">
+              4 Active
+            </span>
+
           </div>
 
-          <div className="risk-events">
-            <div className="risk-event high-event">
-              <div className="event-icon">!</div>
-              <div>
-                <strong>Unusual Transaction Pattern</strong>
-                <span>Transaction velocity exceeded threshold</span>
-                <small>2 minutes ago</small>
+
+          <div className="risk-event-list">
+
+
+            {/* EVENT 1 */}
+            <div className="risk-event-card">
+
+              <div className="risk-event-icon high">
+                !
               </div>
-              <b>HIGH</b>
+
+              <div className="risk-event-info">
+                <strong>
+                  Unusual Transaction Pattern
+                </strong>
+
+                <span>
+                  Transaction velocity exceeded threshold
+                </span>
+
+                <small>
+                  2 minutes ago
+                </small>
+              </div>
+
+              <b className="risk-event-level high">
+                HIGH
+              </b>
+
             </div>
 
-            <div className="risk-event high-event">
-              <div className="event-icon">!</div>
-              <div>
-                <strong>Location Anomaly</strong>
-                <span>Impossible travel pattern detected</span>
-                <small>15 minutes ago</small>
+
+            {/* EVENT 2 */}
+            <div className="risk-event-card">
+
+              <div className="risk-event-icon high">
+                !
               </div>
-              <b>HIGH</b>
+
+              <div className="risk-event-info">
+                <strong>
+                  Location Anomaly
+                </strong>
+
+                <span>
+                  Impossible travel pattern detected
+                </span>
+
+                <small>
+                  15 minutes ago
+                </small>
+              </div>
+
+              <b className="risk-event-level high">
+                HIGH
+              </b>
+
             </div>
 
-            <div className="risk-event medium-event">
-              <div className="event-icon">!</div>
-              <div>
-                <strong>Velocity Check Failed</strong>
-                <span>Multiple transactions in short period</span>
-                <small>32 minutes ago</small>
+
+            {/* EVENT 3 */}
+            <div className="risk-event-card">
+
+              <div className="risk-event-icon medium">
+                !
               </div>
-              <b>MEDIUM</b>
+
+              <div className="risk-event-info">
+                <strong>
+                  Velocity Check Failed
+                </strong>
+
+                <span>
+                  Multiple transactions in short period
+                </span>
+
+                <small>
+                  32 minutes ago
+                </small>
+              </div>
+
+              <b className="risk-event-level medium">
+                MEDIUM
+              </b>
+
             </div>
 
-            <div className="risk-event medium-event">
-              <div className="event-icon">!</div>
-              <div>
-                <strong>Device Fingerprint Change</strong>
-                <span>New device detected for account</span>
-                <small>1 hour ago</small>
+
+            {/* EVENT 4 */}
+            <div className="risk-event-card">
+
+              <div className="risk-event-icon medium">
+                !
               </div>
-              <b>MEDIUM</b>
+
+              <div className="risk-event-info">
+                <strong>
+                  Device Fingerprint Change
+                </strong>
+
+                <span>
+                  New device detected for account
+                </span>
+
+                <small>
+                  1 hour ago
+                </small>
+              </div>
+
+              <b className="risk-event-level medium">
+                MEDIUM
+              </b>
+
             </div>
+
           </div>
+
         </div>
+
       </section>
 
-      <section className="panel transaction-stream">
-        <div className="panel-header">
+
+      {/* TRANSACTION STREAM */}
+      <section className="risk-monitor-panel transaction-stream-panel">
+
+        <div className="risk-monitor-panel-header">
+
           <div>
             <h2>Live Transaction Stream</h2>
-            <p>Latest transactions being analyzed by the model</p>
+
+            <p>
+              Latest transactions being analyzed by the model
+            </p>
           </div>
 
-          <button className="panel-action">View All →</button>
+          <button className="risk-panel-action">
+            View All →
+          </button>
+
         </div>
 
-        <div className="transaction-table">
-          <div className="table-head">
+
+        <div className="risk-transaction-table">
+
+          {/* TABLE HEADER */}
+          <div className="risk-transaction-head">
+
             <span>TRANSACTION</span>
             <span>AMOUNT</span>
             <span>LOCATION</span>
             <span>RISK</span>
             <span>STATUS</span>
+
           </div>
 
-          <div className="transaction-row">
-            <span>#TXN-98241</span>
-            <span>₹84,500</span>
-            <span>Mumbai, IN</span>
-            <strong className="risk-high">82</strong>
-            <b className="blocked">Blocked</b>
+
+          {/* ROW 1 */}
+          <div className="risk-transaction-row">
+
+            <span className="transaction-id">
+              #TXN-98241
+            </span>
+
+            <span>
+              ₹84,500
+            </span>
+
+            <span>
+              Mumbai, IN
+            </span>
+
+            <strong className="transaction-risk high">
+              82
+            </strong>
+
+            <b className="transaction-status blocked">
+              Blocked
+            </b>
+
           </div>
 
-          <div className="transaction-row">
-            <span>#TXN-98240</span>
-            <span>₹12,800</span>
-            <span>Pune, IN</span>
-            <strong className="risk-medium">61</strong>
-            <b className="review">Review</b>
+
+          {/* ROW 2 */}
+          <div className="risk-transaction-row">
+
+            <span className="transaction-id">
+              #TXN-98240
+            </span>
+
+            <span>
+              ₹12,800
+            </span>
+
+            <span>
+              Pune, IN
+            </span>
+
+            <strong className="transaction-risk medium">
+              61
+            </strong>
+
+            <b className="transaction-status review">
+              Review
+            </b>
+
           </div>
 
-          <div className="transaction-row">
-            <span>#TXN-98239</span>
-            <span>₹3,250</span>
-            <span>Delhi, IN</span>
-            <strong className="risk-low">24</strong>
-            <b className="approved">Approved</b>
+
+          {/* ROW 3 */}
+          <div className="risk-transaction-row">
+
+            <span className="transaction-id">
+              #TXN-98239
+            </span>
+
+            <span>
+              ₹3,250
+            </span>
+
+            <span>
+              Delhi, IN
+            </span>
+
+            <strong className="transaction-risk low">
+              24
+            </strong>
+
+            <b className="transaction-status approved">
+              Approved
+            </b>
+
           </div>
 
-          <div className="transaction-row">
-            <span>#TXN-98238</span>
-            <span>₹7,900</span>
-            <span>Bengaluru, IN</span>
-            <strong className="risk-low">18</strong>
-            <b className="approved">Approved</b>
+
+          {/* ROW 4 */}
+          <div className="risk-transaction-row">
+
+            <span className="transaction-id">
+              #TXN-98238
+            </span>
+
+            <span>
+              ₹7,900
+            </span>
+
+            <span>
+              Bengaluru, IN
+            </span>
+
+            <strong className="transaction-risk low">
+              18
+            </strong>
+
+            <b className="transaction-status approved">
+              Approved
+            </b>
+
           </div>
+
         </div>
+
       </section>
+
     </div>
   )
 }
