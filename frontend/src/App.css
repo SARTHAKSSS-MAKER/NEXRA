@@ -1705,3 +1705,497 @@ button {
   }
 
 }
+/* =========================================================
+   MODELS PAGE
+   ========================================================= */
+
+.models-page {
+  position: relative;
+}
+
+
+/* ---------------------------------------------------------
+   DEPLOY BUTTON
+   --------------------------------------------------------- */
+
+.model-action {
+  height: 38px;
+  padding: 0 15px;
+
+  border: 1px solid rgba(190, 133, 57, 0.35);
+  border-radius: 8px;
+
+  color: #e1aa5c;
+  background: rgba(170, 108, 34, 0.09);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  transition: 0.2s ease;
+}
+
+.model-action:hover {
+  background: rgba(170, 108, 34, 0.16);
+  border-color: rgba(190, 133, 57, 0.55);
+}
+
+
+/* ---------------------------------------------------------
+   MODEL STATS
+   --------------------------------------------------------- */
+
+.model-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 13px;
+}
+
+
+.model-stat {
+  min-height: 132px;
+
+  padding: 18px;
+
+  border: 1px solid #272620;
+  border-radius: 10px;
+
+  background: linear-gradient(
+    145deg,
+    #151514,
+    #111110
+  );
+}
+
+
+.model-stat > span {
+  display: block;
+
+  color: #858078;
+  font-size: 10px;
+}
+
+
+.model-stat strong {
+  display: block;
+
+  margin-top: 13px;
+
+  color: #eee8df;
+
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+
+.model-stat strong.healthy {
+  color: #9bad88;
+}
+
+
+.model-stat small {
+  display: block;
+
+  margin-top: 6px;
+
+  color: #62605a;
+  font-size: 9px;
+}
+
+
+/* ---------------------------------------------------------
+   MODELS PANEL
+   --------------------------------------------------------- */
+
+.models-panel {
+  margin-top: 13px;
+}
+
+
+.model-filter {
+  height: 32px;
+
+  padding: 0 11px;
+
+  border: 1px solid #292823;
+  border-radius: 7px;
+
+  color: #8e8980;
+  background: #111110;
+
+  font-size: 10px;
+}
+
+
+.model-filter:hover {
+  color: #c8c1b7;
+  border-color: #38362f;
+}
+
+
+/* ---------------------------------------------------------
+   TABLE
+   --------------------------------------------------------- */
+
+.models-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+
+.models-table-head,
+.model-row {
+  min-width: 900px;
+
+  display: grid;
+
+  grid-template-columns:
+    2.2fr
+    0.8fr
+    0.8fr
+    0.8fr
+    0.8fr
+    1fr
+    0.9fr;
+
+  align-items: center;
+}
+
+
+.models-table-head {
+  min-height: 42px;
+
+  padding: 0 20px;
+
+  border-top: 1px solid #22221f;
+  border-bottom: 1px solid #22221f;
+
+  color: #5e5b55;
+
+  font-size: 8px;
+  font-weight: 600;
+
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+
+.model-row {
+  min-height: 76px;
+
+  padding: 0 20px;
+
+  border-bottom: 1px solid #22221f;
+
+  color: #98938a;
+
+  font-size: 10px;
+
+  transition: background 0.2s ease;
+}
+
+
+.model-row:last-child {
+  border-bottom: none;
+}
+
+
+.model-row:hover {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+
+/* ---------------------------------------------------------
+   MODEL NAME
+   --------------------------------------------------------- */
+
+.model-name {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+
+.model-icon {
+  width: 31px;
+  height: 31px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(183, 125, 53, 0.22);
+  border-radius: 7px;
+
+  color: #bd8440;
+  background: rgba(166, 111, 52, 0.07);
+
+  font-size: 13px;
+}
+
+
+.model-name strong,
+.model-name small {
+  display: block;
+}
+
+
+.model-name strong {
+  color: #c9c3ba;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+
+.model-name small {
+  margin-top: 4px;
+
+  color: #5f5c56;
+
+  font-size: 8px;
+}
+
+
+/* ---------------------------------------------------------
+   MODEL DATA
+   --------------------------------------------------------- */
+
+.model-version {
+  color: #77736c;
+
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 9px;
+}
+
+
+.model-score {
+  color: #c4beb4;
+
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 10px;
+}
+
+
+.model-status {
+  width: max-content;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 5px 8px;
+
+  border-radius: 5px;
+
+  font-size: 8px;
+}
+
+
+.model-status i {
+  width: 5px;
+  height: 5px;
+
+  display: block;
+
+  border-radius: 50%;
+}
+
+
+.model-status.production {
+  color: #91a681;
+
+  border: 1px solid rgba(105, 137, 91, 0.2);
+  background: rgba(105, 137, 91, 0.07);
+}
+
+
+.model-status.production i {
+  background: #849d72;
+}
+
+
+.model-status.monitoring {
+  color: #bd985c;
+
+  border: 1px solid rgba(177, 136, 70, 0.2);
+  background: rgba(177, 136, 70, 0.07);
+}
+
+
+.model-status.monitoring i {
+  background: #c19a52;
+}
+
+
+.model-updated {
+  color: #66625b;
+
+  font-size: 9px;
+}
+
+
+/* ---------------------------------------------------------
+   LOWER MODELS SECTION
+   --------------------------------------------------------- */
+
+.model-lower {
+  margin-top: 13px;
+}
+
+
+.model-performance,
+.model-health {
+  min-height: 315px;
+}
+
+
+/* ---------------------------------------------------------
+   MODEL CHART
+   --------------------------------------------------------- */
+
+.model-chart {
+  position: relative;
+
+  height: 220px;
+
+  margin: 0 20px 20px 48px;
+
+  border-bottom: 1px solid #292823;
+}
+
+
+.model-chart-grid {
+  position: absolute;
+
+  inset: 5px 0 28px -37px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  color: #55524d;
+
+  font-size: 8px;
+}
+
+
+.model-chart svg {
+  width: 100%;
+  height: 175px;
+
+  margin-top: 10px;
+
+  color: #b27839;
+}
+
+
+.model-chart-labels {
+  display: flex;
+  justify-content: space-between;
+
+  color: #55524d;
+
+  font-size: 8px;
+}
+
+
+/* ---------------------------------------------------------
+   MODEL HEALTH
+   --------------------------------------------------------- */
+
+.health-list {
+  padding: 5px 20px 20px;
+}
+
+
+.health-item {
+  margin-bottom: 22px;
+}
+
+
+.health-item > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 8px;
+}
+
+
+.health-item span {
+  color: #969188;
+
+  font-size: 10px;
+}
+
+
+.health-item strong {
+  color: #c8c1b7;
+
+  font-size: 10px;
+}
+
+
+.health-bar {
+  height: 5px;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+
+  background: #24231f;
+}
+
+
+.health-bar i {
+  display: block;
+
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: linear-gradient(
+    90deg,
+    #765029,
+    #b27b3d
+  );
+}
+
+
+/* =========================================================
+   MODELS RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+  .model-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+}
+
+
+@media (max-width: 800px) {
+
+  .model-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .model-lower {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+@media (max-width: 560px) {
+
+  .model-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .model-action {
+    width: 100%;
+  }
+
+} 
