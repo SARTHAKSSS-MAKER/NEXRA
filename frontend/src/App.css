@@ -1260,3 +1260,1249 @@ box-shadow:inset 3px 0 0 #c48a42,0 4px 14px rgba(0,0,0,.14)}
 .ecom-dashboard * {
   box-sizing: border-box;
 }
+/* =========================================================
+   NEXRA — E-COMMERCE TRANSACTION ANALYSIS
+   FINAL FORM / CARD FIX
+   Put this at the VERY END of app.css
+   ========================================================= */
+
+/* Main page */
+.ecommerce-page {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------
+   ANALYSIS LAYOUT
+   --------------------------------------------------------- */
+
+.ecommerce-page .analysis-grid {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) !important;
+  gap: 24px !important;
+  align-items: stretch !important;
+  margin-top: 30px !important;
+}
+
+/* ---------------------------------------------------------
+   ANALYSIS CARDS
+   --------------------------------------------------------- */
+
+.ecommerce-page .analysis-grid > .dashboard-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 430px !important;
+  box-sizing: border-box !important;
+
+  padding: 30px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 18px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.018)
+    ) !important;
+
+  box-shadow:
+    0 15px 45px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+
+  overflow: hidden !important;
+}
+
+/* Card headings */
+
+.ecommerce-page .analysis-grid .dashboard-card h2 {
+  margin: 0 0 8px 0 !important;
+
+  color: #f5f3eb !important;
+
+  font-size: 23px !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+
+  text-align: left !important;
+}
+
+/* Card subtitle */
+
+.ecommerce-page .analysis-grid .card-subtitle {
+  margin: 0 0 28px 0 !important;
+
+  color: rgba(255, 255, 255, 0.58) !important;
+
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+
+  text-align: left !important;
+}
+
+/* ---------------------------------------------------------
+   FORM GRID
+   --------------------------------------------------------- */
+
+.ecommerce-page .analysis-grid .form-grid {
+  width: 100% !important;
+
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+
+  gap: 22px 20px !important;
+
+  margin: 0 !important;
+}
+
+/* Each individual field */
+
+.ecommerce-page .analysis-grid .form-grid > div {
+  width: 100% !important;
+  min-width: 0 !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  gap: 8px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ---------------------------------------------------------
+   FORM LABELS
+   --------------------------------------------------------- */
+
+.ecommerce-page .analysis-grid .form-grid label {
+  display: block !important;
+
+  width: 100% !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  color: #e9e6dc !important;
+
+  font-size: 13px !important;
+  font-weight: 600 !important;
+
+  line-height: 1.4 !important;
+
+  text-align: left !important;
+
+  white-space: normal !important;
+}
+
+/* ---------------------------------------------------------
+   INPUTS + SELECTS
+   --------------------------------------------------------- */
+
+.ecommerce-page .analysis-grid .form-grid input,
+.ecommerce-page .analysis-grid .form-grid select {
+  display: block !important;
+
+  width: 100% !important;
+  height: 48px !important;
+
+  box-sizing: border-box !important;
+
+  margin: 0 !important;
+  padding: 0 14px !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 10px !important;
+
+  outline: none !important;
+
+  background: rgba(255, 255, 255, 0.055) !important;
+
+  color: #f4f2ea !important;
+
+  font-family: inherit !important;
+  font-size: 14px !important;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease !important;
+}
+
+/* Placeholder */
+
+.ecommerce-page .analysis-grid .form-grid input::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Select text */
+
+.ecommerce-page .analysis-grid .form-grid select {
+  cursor: pointer !important;
+}
+
+/* Select options */
+
+.ecommerce-page .analysis-grid .form-grid select option {
+  background: #171714 !important;
+  color: #f5f3eb !important;
+}
+
+/* Focus */
+
+.ecommerce-page .analysis-grid .form-grid input:focus,
+.ecommerce-page .analysis-grid .form-grid select:focus {
+  border-color: #d6a928 !important;
+
+  background: rgba(214, 169, 40, 0.055) !important;
+
+  box-shadow:
+    0 0 0 3px rgba(214, 169, 40, 0.10),
+    0 0 20px rgba(214, 169, 40, 0.06) !important;
+}
+
+/* Hover */
+
+.ecommerce-page .analysis-grid .form-grid input:hover,
+.ecommerce-page .analysis-grid .form-grid select:hover {
+  border-color: rgba(214, 169, 40, 0.42) !important;
+}
+
+/* ---------------------------------------------------------
+   ANALYZE BUTTON
+   --------------------------------------------------------- */
+
+.ecommerce-page .analysis-grid .primary-button {
+  width: 100% !important;
+  height: 50px !important;
+
+  margin-top: 28px !important;
+
+  padding: 0 20px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  box-sizing: border-box !important;
+
+  border: 1px solid rgba(214, 169, 40, 0.65) !important;
+  border-radius: 10px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #d6a928,
+      #b88912
+    ) !important;
+
+  color: #11100c !important;
+
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+
+  letter-spacing: 0.2px !important;
+
+  cursor: pointer !important;
+
+  box-shadow:
+    0 8px 25px rgba(214, 169, 40, 0.16) !important;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease !important;
+}
+
+.ecommerce-page .analysis-grid .primary-button:hover {
+  transform: translateY(-2px) !important;
+
+  filter: brightness(1.08) !important;
+
+  box-shadow:
+    0 12px 30px rgba(214, 169, 40, 0.25) !important;
+}
+
+.ecommerce-page .analysis-grid .primary-button:active {
+  transform: translateY(0) !important;
+}
+
+/* ---------------------------------------------------------
+   RESULT PANEL
+   --------------------------------------------------------- */
+
+.ecommerce-page .analysis-grid > .dashboard-card:last-child {
+  justify-content: flex-start !important;
+}
+
+/* Empty result area */
+
+.ecommerce-page .empty-result {
+  flex: 1 !important;
+
+  min-height: 250px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  text-align: center !important;
+
+  padding: 30px !important;
+
+  box-sizing: border-box !important;
+
+  border: 1px dashed rgba(255, 255, 255, 0.12) !important;
+  border-radius: 14px !important;
+
+  background: rgba(255, 255, 255, 0.018) !important;
+}
+
+/* Result icon */
+
+.ecommerce-page .empty-result .result-icon {
+  width: 58px !important;
+  height: 58px !important;
+
+  margin-bottom: 18px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 50% !important;
+
+  border: 1px solid rgba(214, 169, 40, 0.45) !important;
+
+  background: rgba(214, 169, 40, 0.08) !important;
+
+  color: #d6a928 !important;
+
+  font-size: 28px !important;
+  font-weight: 500 !important;
+}
+
+/* Awaiting heading */
+
+.ecommerce-page .empty-result h3 {
+  margin: 0 0 10px 0 !important;
+
+  color: #f4f2ea !important;
+
+  font-size: 18px !important;
+  font-weight: 700 !important;
+
+  text-align: center !important;
+}
+
+/* Awaiting text */
+
+.ecommerce-page .empty-result p {
+  max-width: 300px !important;
+
+  margin: 0 !important;
+
+  color: rgba(255, 255, 255, 0.52) !important;
+
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+
+  text-align: center !important;
+}
+
+/* ---------------------------------------------------------
+   PREDICTION RESULT
+   --------------------------------------------------------- */
+
+.ecommerce-page .prediction-result {
+  flex: 1 !important;
+
+  min-height: 250px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 30px !important;
+
+  box-sizing: border-box !important;
+
+  text-align: center !important;
+
+  border-radius: 14px !important;
+
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Result icon */
+
+.ecommerce-page .prediction-result .result-icon {
+  width: 62px !important;
+  height: 62px !important;
+
+  margin-bottom: 18px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 50% !important;
+
+  font-size: 26px !important;
+  font-weight: 800 !important;
+}
+
+/* Safe */
+
+.ecommerce-page .prediction-result.safe {
+  border: 1px solid rgba(214, 169, 40, 0.32) !important;
+}
+
+.ecommerce-page .prediction-result.safe .result-icon {
+  color: #d6a928 !important;
+
+  background: rgba(214, 169, 40, 0.10) !important;
+
+  border: 1px solid rgba(214, 169, 40, 0.35) !important;
+}
+
+/* Error */
+
+.ecommerce-page .prediction-result.error {
+  border: 1px solid rgba(214, 93, 78, 0.35) !important;
+}
+
+.ecommerce-page .prediction-result.error .result-icon {
+  color: #e47768 !important;
+
+  background: rgba(214, 93, 78, 0.10) !important;
+
+  border: 1px solid rgba(214, 93, 78, 0.35) !important;
+}
+
+/* Result heading */
+
+.ecommerce-page .prediction-result h3 {
+  margin: 0 0 10px 0 !important;
+
+  color: #f4f2ea !important;
+
+  font-size: 19px !important;
+  font-weight: 700 !important;
+}
+
+/* Result paragraph */
+
+.ecommerce-page .prediction-result p {
+  max-width: 320px !important;
+
+  margin: 0 !important;
+
+  color: rgba(255, 255, 255, 0.58) !important;
+
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+
+  .ecommerce-page .analysis-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+}
+
+@media (max-width: 650px) {
+
+  .ecommerce-page .analysis-grid > .dashboard-card {
+    padding: 22px !important;
+    min-height: auto !important;
+  }
+
+  .ecommerce-page .analysis-grid .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+}
+/* =========================================================
+   E-COMMERCE ALERTS
+   ========================================================= */
+
+.ecommerce-page {
+  width: 100%;
+}
+
+/* Alerts page layout */
+
+.alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 28px;
+}
+
+/* Alert statistic cards */
+
+.alert-stat {
+  background: rgba(35, 37, 35, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+  padding: 24px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: 0.25s ease;
+}
+
+.alert-stat:hover {
+  border-color: rgba(255, 214, 35, 0.75);
+  transform: translateY(-3px);
+}
+
+.alert-stat span {
+  color: #b9b9b0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  margin-bottom: 10px;
+}
+
+.alert-stat strong {
+  color: #f5f5ed;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+/* Recent alerts section */
+
+.alerts-list {
+  margin-top: 28px;
+}
+
+.alerts-list h2 {
+  color: #f5f5ed;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+/* Individual alert */
+
+.alert-item {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 120px;
+  align-items: center;
+  gap: 20px;
+
+  background: rgba(35, 37, 35, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 18px;
+
+  padding: 18px 22px;
+  margin-bottom: 12px;
+
+  transition: 0.25s ease;
+}
+
+.alert-item:hover {
+  border-color: rgba(255, 214, 35, 0.75);
+  background: rgba(45, 43, 35, 0.85);
+  transform: translateX(3px);
+}
+
+/* Transaction ID */
+
+.alert-id {
+  color: #f3f3eb;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+/* Category */
+
+.alert-category {
+  color: #c7c7bf;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Amount */
+
+.alert-amount {
+  color: #f5f5ed;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Risk level */
+
+.alert-risk {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* High risk */
+
+.alert-risk.high {
+  color: #ffcf24;
+}
+
+/* Medium risk */
+
+.alert-risk.medium {
+  color: #e8c94a;
+}
+
+/* Low risk */
+
+.alert-risk.low {
+  color: #a9b39b;
+}
+
+/* Alert action/status */
+
+.alert-status {
+  justify-self: end;
+
+  padding: 9px 14px;
+  border-radius: 10px;
+
+  border: 1px solid rgba(255, 214, 35, 0.45);
+  background: rgba(255, 214, 35, 0.08);
+
+  color: #ffd623;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+  .alerts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .alert-item {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .alert-status {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 750px) {
+
+  .alerts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-item {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-status {
+    justify-self: start;
+  }
+}
+/* =========================================================
+   E-COMMERCE ALERTS
+   ========================================================= */
+
+.ecommerce-page {
+  width: 100%;
+}
+
+/* =========================================================
+   ALERT STATISTICS
+   ========================================================= */
+
+.ecommerce-page .dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 28px;
+  width: 100%;
+}
+
+.ecommerce-page .dashboard-grid .dashboard-card {
+  background: rgba(35, 37, 35, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+
+  padding: 24px;
+  min-height: 130px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+
+  transition: 0.25s ease;
+  box-sizing: border-box;
+}
+
+.ecommerce-page .dashboard-grid .dashboard-card:hover {
+  border-color: rgba(255, 214, 35, 0.75);
+  transform: translateY(-3px);
+}
+
+/* Card label */
+
+.ecommerce-page .card-label {
+  display: block;
+
+  color: #b9b9b0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+
+  margin-bottom: 10px;
+}
+
+/* Card number */
+
+.ecommerce-page .dashboard-grid .dashboard-card strong {
+  display: block;
+
+  color: #f5f5ed;
+  font-size: 32px;
+  font-weight: 800;
+
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+/* Card description */
+
+.ecommerce-page .dashboard-grid .dashboard-card small {
+  display: block;
+
+  color: #ffd623;
+  font-size: 13px;
+  font-weight: 600;
+
+  line-height: 1.4;
+}
+
+/* =========================================================
+   RECENT ALERTS
+   ========================================================= */
+
+.ecommerce-page .wide-card {
+  width: 100%;
+  margin-top: 28px;
+
+  background: rgba(35, 37, 35, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 18px;
+
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Heading */
+
+.ecommerce-page .wide-card h2 {
+  color: #f5f5ed;
+  font-size: 22px;
+  font-weight: 800;
+
+  margin: 0 0 20px 0;
+}
+
+/* Alert list */
+
+.ecommerce-page .alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Individual alert row */
+
+.ecommerce-page .alert-row {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 140px;
+
+  align-items: center;
+  gap: 24px;
+
+  padding: 18px 22px;
+
+  background: rgba(35, 37, 35, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 16px;
+
+  box-sizing: border-box;
+
+  transition: 0.25s ease;
+}
+
+.ecommerce-page .alert-row:hover {
+  border-color: rgba(255, 214, 35, 0.75);
+  background: rgba(45, 43, 35, 0.85);
+  transform: translateX(3px);
+}
+
+/* Alert row columns */
+
+.ecommerce-page .alert-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  min-width: 0;
+}
+
+/* Main text */
+
+.ecommerce-page .alert-row strong {
+  color: #f3f3eb;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Secondary text */
+
+.ecommerce-page .alert-row span {
+  color: #c7c7bf;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Status */
+
+.ecommerce-page .alert-row > span {
+  justify-self: end;
+
+  padding: 9px 14px;
+
+  border-radius: 10px;
+
+  border: 1px solid rgba(255, 214, 35, 0.45);
+  background: rgba(255, 214, 35, 0.08);
+
+  color: #ffd623;
+  font-size: 12px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+  .ecommerce-page .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ecommerce-page .alert-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ecommerce-page .alert-row > span {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 650px) {
+
+  .ecommerce-page .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ecommerce-page .wide-card {
+    padding: 18px;
+  }
+
+  .ecommerce-page .alert-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .ecommerce-page .alert-row > span {
+    justify-self: start;
+  }
+}
+/* =========================================================
+   E-COMMERCE FRAUD MODEL
+   ========================================================= */
+
+.ecommerce-page .dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+  width: 100%;
+}
+
+.ecommerce-page .dashboard-grid .dashboard-card {
+  background: rgba(35, 37, 35, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+
+  padding: 24px;
+  min-height: 135px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+
+  box-sizing: border-box;
+  transition: 0.25s ease;
+}
+
+.ecommerce-page .dashboard-grid .dashboard-card:hover {
+  border-color: rgba(255, 214, 35, 0.75);
+  transform: translateY(-3px);
+}
+
+/* Card label */
+
+.ecommerce-page .dashboard-grid .card-label {
+  display: block;
+
+  color: #b9b9b0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+
+  margin-bottom: 10px;
+}
+
+/* Main value */
+
+.ecommerce-page .dashboard-grid .dashboard-card strong {
+  display: block;
+
+  color: #f5f5ed;
+  font-size: 28px;
+  font-weight: 800;
+
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+
+/* Description */
+
+.ecommerce-page .dashboard-grid .dashboard-card small {
+  display: block;
+
+  color: #ffd623;
+  font-size: 13px;
+  font-weight: 600;
+
+  line-height: 1.4;
+}
+
+/* =========================================================
+   MODEL INFORMATION
+   ========================================================= */
+
+.ecommerce-page .wide-card {
+  width: 100%;
+  margin-top: 28px;
+
+  background: rgba(35, 37, 35, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 18px;
+
+  padding: 26px;
+  box-sizing: border-box;
+}
+
+.ecommerce-page .wide-card h2 {
+  color: #f5f5ed;
+  font-size: 22px;
+  font-weight: 800;
+
+  margin: 0 0 22px 0;
+}
+
+/* Model information grid */
+
+.ecommerce-page .model-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ecommerce-page .model-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 18px;
+
+  background: rgba(25, 27, 25, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+
+  box-sizing: border-box;
+}
+
+.ecommerce-page .model-info span {
+  color: #aeadA5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ecommerce-page .model-info strong {
+  color: #f5f5ed;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .ecommerce-page .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .ecommerce-page .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ecommerce-page .model-info {
+    grid-template-columns: 1fr;
+  }
+
+  .ecommerce-page .wide-card {
+    padding: 20px;
+  }
+}
+/* =========================================================
+   E-COMMERCE REPORTS — MODEL 2
+   ========================================================= */
+
+.ecommerce-page .dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+  margin-top: 28px;
+}
+
+/* ---------------------------------------------------------
+   REPORT STAT CARDS
+   --------------------------------------------------------- */
+
+.ecommerce-page .dashboard-grid .dashboard-card {
+  min-height: 135px;
+
+  padding: 24px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+
+  background: rgba(35, 37, 35, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+
+  box-sizing: border-box;
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.ecommerce-page .dashboard-grid .dashboard-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 214, 35, 0.75);
+  background: rgba(43, 42, 35, 0.85);
+}
+
+/* Label */
+
+.ecommerce-page .dashboard-grid .card-label {
+  display: block;
+
+  margin-bottom: 10px;
+
+  color: #b9b9b0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  line-height: 1.3;
+}
+
+/* Value */
+
+.ecommerce-page .dashboard-grid .dashboard-card strong {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #f5f5ed;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* Description */
+
+.ecommerce-page .dashboard-grid .dashboard-card small {
+  display: block;
+
+  color: #ffd623;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   DETECTION SUMMARY
+   ========================================================= */
+
+.ecommerce-page .wide-card {
+  width: 100%;
+  margin-top: 28px;
+
+  padding: 26px;
+
+  background: rgba(35, 37, 35, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 18px;
+
+  box-sizing: border-box;
+}
+
+.ecommerce-page .wide-card h2 {
+  margin: 0 0 20px;
+
+  color: #f5f5ed;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+
+/* ---------------------------------------------------------
+   REPORT ROWS
+   --------------------------------------------------------- */
+
+.ecommerce-page .report-row {
+  width: 100%;
+  min-height: 62px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  padding: 16px 20px;
+  margin-bottom: 10px;
+
+  background: rgba(25, 27, 25, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+
+  box-sizing: border-box;
+
+  transition: 0.25s ease;
+}
+
+.ecommerce-page .report-row:last-child {
+  margin-bottom: 0;
+}
+
+.ecommerce-page .report-row:hover {
+  border-color: rgba(255, 214, 35, 0.65);
+  background: rgba(45, 43, 35, 0.75);
+  transform: translateX(3px);
+}
+
+
+/* Report name */
+
+.ecommerce-page .report-row span {
+  color: #c7c7bf;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  line-height: 1.4;
+}
+
+
+/* Report percentage */
+
+.ecommerce-page .report-row strong {
+  color: #ffd623;
+
+  font-size: 17px;
+  font-weight: 800;
+
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .ecommerce-page .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ecommerce-page .wide-card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .ecommerce-page .report-row {
+    min-height: auto;
+
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 8px;
+  }
+
+  .ecommerce-page .report-row strong {
+    font-size: 16px;
+  }
+}
