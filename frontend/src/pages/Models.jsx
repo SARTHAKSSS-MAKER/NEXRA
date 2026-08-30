@@ -19,7 +19,10 @@ function Models() {
           : data.models || data.data || []
 
         setModels(modelData)
-        setPredictionsToday(data.predictions_today || 0)
+        setPredictionsToday(Array.isArray(data)
+        ? 0
+        :
+        Number(data.predictions_today || 0))
         setLoading(false)
       })
       .catch((err) => {
