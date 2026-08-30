@@ -74,3 +74,12 @@ export const getDashboardData = async () => {
     risk,
   }
 }
+
+export const predictFraud = (features) => {
+  return request("/api/predict", {
+    method: "POST",
+    body: JSON.stringify({
+      features,
+    }),
+  })
+}
