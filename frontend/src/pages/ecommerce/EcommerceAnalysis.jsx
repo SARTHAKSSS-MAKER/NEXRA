@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { predictFraud } from "../../api"
 
 function EcommerceAnalysis() {
 
@@ -8,8 +9,9 @@ function EcommerceAnalysis() {
   const [payment, setPayment] = useState("")
 
   const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
 
-  const analyzeTransaction = () => {
+  const analyzeTransaction = async () => {
 
     if (!amount || !quantity || !category || !payment) {
       setResult({
@@ -19,13 +21,106 @@ function EcommerceAnalysis() {
       return
     }
 
-    // Temporary frontend result.
-    // Later this will call the Model 2 backend API.
+    setLoading(true)
+    setResult(null)
 
-    setResult({
-      type: "safe",
-      message: "Transaction analyzed successfully."
-    })
+    try {
+
+      /*
+       * Model 2 currently expects:
+       *
+       * Time + V1...V28 + Amount = 30 features
+       *
+       * The current UI provides e-commerce fields,
+       * so we create a temporary feature vector
+       * for testing the complete React → FastAPI → ML flow.
+       */
+
+      const categoryCode = {
+        "Electronics": 1,
+        "Fashion": 2,
+        "Grocery": 3,
+        "Home & Furniture": 4,
+        "Beauty": 5,
+        "Other": 6,
+      }[category] || 0
+
+      const paymentCode = {
+        "Credit Card": 1,
+        "Debit Card": 2,
+        "UPI": 3,
+        "Net Banking": 4,
+        "Wallet": 5,
+      }[payment] || 0
+
+      const numericAmount = Number(amount)
+      const numericQuantity = Number(quantity)
+
+      /*
+       * 30 features
+       *
+       * Time
+       * V1 - V28
+       * Amount
+       */
+
+      const features = [
+        0,                  // Time
+        numericQuantity,    // V1
+        categoryCode,       // V2
+        paymentCode,        // V3
+        numericAmount,      // V4
+
+        0,                  // V5
+        0,                  // V6
+        0,                  // V7
+        0,                  // V8
+        0,                  // V9
+        0,                  // V10
+        0,                  // V11
+        0,                  // V12
+        0,                  // V13
+        0,                  // V14
+        0,                  // V15
+        0,                  // V16
+        0,                  // V17
+        0,                  // V18
+        0,                  // V19
+        0,                  // V20
+        0,                  // V21
+        0,                  // V22
+        0,                  // V23
+        0,                  // V24
+        0,                  // V25
+        0,                  // V26
+        0,                  // V27
+        0,                  // V28
+
+        numericAmount       // Amount
+      ]
+
+      const data = await predictFraud(features)
+
+      setResult({
+        type: data.fraud ? "danger" : "safe",
+        message: data.fraud
+          ? "Potential fraudulent transaction detected."
+          : "Transaction appears legitimate.",
+        ...data,
+      })
+
+    } catch (error) {
+
+      console.error("Prediction API error:", error)
+
+      setResult({
+        type: "error",
+        message: "Unable to connect to the NEXRA ML backend."
+      })
+
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -116,8 +211,9 @@ function EcommerceAnalysis() {
           <button
             className="primary-button"
             onClick={analyzeTransaction}
+            disabled={loading}
           >
-            Analyze Transaction
+            {loading ? "Analyzing..." : "Analyze Transaction"}
           </button>
 
         </div>
@@ -135,30 +231,76 @@ function EcommerceAnalysis() {
 
           {!result && (
             <div className="empty-result">
-              <div className="result-icon">◇</div>
 
-              <h3>Awaiting Analysis</h3>
+              <div className="result-icon">
+                ◇
+              </div>
+
+              <h3>
+                Awaiting Analysis
+              </h3>
 
               <p>
                 Enter transaction details and run the Model 2 analysis.
               </p>
+
             </div>
           )}
+
 
           {result && (
             <div className={`prediction-result ${result.type}`}>
 
               <div className="result-icon">
-                {result.type === "safe" ? "✓" : "!"}
+                {result.fraud ? "!" : "✓"}
               </div>
 
               <h3>
-                {result.type === "safe"
-                  ? "Analysis Complete"
-                  : "Input Required"}
+                {result.fraud
+                  ? "Fraud Detected"
+                  : "Transaction Approved"}
               </h3>
 
-              <p>{result.message}</p>
+              <p>
+                {result.message}
+              </p>
+
+
+              {/* ML RESULT */}
+
+              {result.risk_score !== undefined && (
+                <div className="prediction-details">
+
+                  <div>
+                    <span>Risk Score</span>
+                    <strong>
+                      {result.risk_score}/100
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Risk Level</span>
+                    <strong>
+                      {result.risk_level}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Status</span>
+                    <strong>
+                      {result.status}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Fraud Probability</span>
+                    <strong>
+                      {(result.fraud_probability * 100).toFixed(2)}%
+                    </strong>
+                  </div>
+
+                </div>
+              )}
 
             </div>
           )}

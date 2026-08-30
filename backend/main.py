@@ -1,15 +1,42 @@
 from pathlib import Path
-
+from datetime import datetime, date
 import joblib
 import numpy as np
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from sqlalchemy import Column,Integer,Boolean,Float,DateTime
 from sqlalchemy.orm import Session
 
 from database import engine, SessionLocal
 from models import Base, Transaction
+
+# =========================================================
+# PREDICTION LOG
+# =========================================================
+
+class PredictionLog(Base):
+
+    __tablename__ = "prediction_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.now,
+        nullable=False
+    )
+
+    fraud = Column(
+        Boolean,
+        nullable=False
+    )
+
+    risk_score = Column(
+        Float,
+        nullable=False
+    )
 
 
 # =========================================================
@@ -25,6 +52,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="NEXRA API",
+    description="NEXRA Fraud Detection and Transaction Risk API",
     version="1.0.0"
 )
 
@@ -63,9 +91,9 @@ MODEL_PATH = BASE_DIR / "ml" / "models" / "fraud_detection_model.pkl"
 SCALER_PATH = BASE_DIR / "ml" / "models" / "scaler.pkl"
 
 
-print("\n" + "=" * 55)
+print("\n" + "=" * 60)
 print("NEXRA ML SYSTEM")
-print("=" * 55)
+print("=" * 60)
 
 fraud_model = None
 scaler = None
@@ -73,11 +101,17 @@ scaler = None
 try:
 
     print("Loading fraud detection model...")
+    print("Model path:", MODEL_PATH)
 
     fraud_model = joblib.load(MODEL_PATH)
-    scaler = joblib.load(SCALER_PATH)
 
     print("Fraud model loaded successfully!")
+
+    print("Loading scaler...")
+    print("Scaler path:", SCALER_PATH)
+
+    scaler = joblib.load(SCALER_PATH)
+
     print("Scaler loaded successfully!")
 
 except Exception as e:
@@ -92,12 +126,73 @@ except Exception as e:
 
 class PredictionRequest(BaseModel):
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "features": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    100.0
+                ]
+            }
+        }
+    )
+
     features: list[float] = Field(
         ...,
         min_length=30,
         max_length=30,
-        description="Time, V1-V28, Amount"
+        description=(
+            "Exactly 30 numerical features: "
+            "Time + V1-V28 + Amount"
+        )
     )
+
+
+# =========================================================
+# RESPONSE SCHEMA
+# =========================================================
+
+class PredictionResponse(BaseModel):
+
+    success: bool
+    prediction: int
+    fraud: bool
+    result: str
+
+    fraud_probability: float
+    fraud_probability_percent: float
+
+    risk_score: float
+    risk_level: str
+    status: str
 
 
 # =========================================================
@@ -153,11 +248,22 @@ def ml_status():
 # FRAUD PREDICTION
 # =========================================================
 
-@app.post("/api/predict")
-def predict_fraud(request: PredictionRequest):
+@app.post(
+    "/api/predict",
+    response_model=PredictionResponse,
+    summary="Predict transaction fraud",
+    description=(
+        "Analyzes a transaction using the trained "
+        "Logistic Regression fraud detection model."
+    )
+)
+def predict_fraud(
+    request: PredictionRequest,
+    db: Session = Depends(get_db)
+):
 
     # -----------------------------------------------------
-    # Check ML system
+    # CHECK ML SYSTEM
     # -----------------------------------------------------
 
     if fraud_model is None or scaler is None:
@@ -168,7 +274,7 @@ def predict_fraud(request: PredictionRequest):
         )
 
     # -----------------------------------------------------
-    # Convert input
+    # CONVERT INPUT
     # -----------------------------------------------------
 
     try:
@@ -186,7 +292,7 @@ def predict_fraud(request: PredictionRequest):
         )
 
     # -----------------------------------------------------
-    # Verify feature count
+    # VERIFY FEATURE COUNT
     # -----------------------------------------------------
 
     if features.shape[1] != 30:
@@ -194,11 +300,34 @@ def predict_fraud(request: PredictionRequest):
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Expected 30 features "
-                f"(Time + V1-V28 + Amount), "
-                f"received {features.shape[1]}."
+                "Exactly 30 features are required: "
+                "Time + V1-V28 + Amount."
             )
         )
+
+    # -----------------------------------------------------
+    # CHECK SCALER
+    # -----------------------------------------------------
+
+    scaler_features = getattr(
+        scaler,
+        "n_features_in_",
+        None
+    )
+
+    if scaler_features is not None:
+
+        if scaler_features != 30:
+
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Scaler expects {scaler_features} features, "
+                    "but the API requires 30. "
+                    "Retrain/save the scaler using the "
+                    "same feature pipeline as the model."
+                )
+            )
 
     # -----------------------------------------------------
     # MODEL PREDICTION
@@ -206,36 +335,18 @@ def predict_fraud(request: PredictionRequest):
 
     try:
 
-        # Check what the scaler expects
-        scaler_features = getattr(
-            scaler,
-            "n_features_in_",
-            None
-        )
-
-        if scaler_features is not None:
-
-            if scaler_features != 30:
-
-                raise HTTPException(
-                    status_code=500,
-                    detail=(
-                        f"Scaler expects {scaler_features} "
-                        f"features, but API received 30. "
-                        "Retrain/save the scaler using the "
-                        "same feature pipeline as the model."
-                    )
-                )
-
-        # Scale features
+        # Scale input using the SAME scaler used during training
         scaled_features = scaler.transform(features)
 
-        # Prediction
+        # Generate prediction
         prediction = int(
             fraud_model.predict(scaled_features)[0]
         )
 
-        # Probability
+        # -------------------------------------------------
+        # FRAUD PROBABILITY
+        # -------------------------------------------------
+
         if hasattr(fraud_model, "predict_proba"):
 
             probabilities = fraud_model.predict_proba(
@@ -260,7 +371,7 @@ def predict_fraud(request: PredictionRequest):
         )
 
         # -------------------------------------------------
-        # RISK LEVEL + STATUS
+        # RISK LEVEL
         # -------------------------------------------------
 
         if risk_score >= 80:
@@ -283,40 +394,53 @@ def predict_fraud(request: PredictionRequest):
             risk_level = "Low"
             status = "Approved"
 
+
+            # -------------------------------------------------
+        # SAVE PREDICTION
         # -------------------------------------------------
-        # RESPONSE
+
+        prediction_log = PredictionLog(
+            fraud=prediction == 1,
+            risk_score=risk_score
+        )
+
+        db.add(prediction_log)
+        db.commit()
+
+        # -------------------------------------------------
+        # FINAL RESULT
         # -------------------------------------------------
 
-        return {
+        return PredictionResponse(
 
-            "success": True,
+            success=True,
 
-            "prediction": prediction,
+            prediction=prediction,
 
-            "fraud": prediction == 1,
+            fraud=prediction == 1,
 
-            "result": (
+            result=(
                 "Fraud"
                 if prediction == 1
                 else "Legitimate"
             ),
 
-            "fraud_probability": round(
+            fraud_probability=round(
                 fraud_probability,
                 4
             ),
 
-            "fraud_probability_percent": round(
+            fraud_probability_percent=round(
                 fraud_probability * 100,
                 2
             ),
 
-            "risk_score": risk_score,
+            risk_score=risk_score,
 
-            "risk_level": risk_level,
+            risk_level=risk_level,
 
-            "status": status
-        }
+            status=status
+        )
 
     except HTTPException:
         raise
@@ -442,35 +566,52 @@ def get_alerts():
 # =========================================================
 
 @app.get("/api/models")
-def get_models():
+def get_models(
+    db: Session = Depends(get_db)
+):
 
-    return [
+    today = date.today()
 
-        {
-            "id": "MOD-001",
-            "name": "Fraud Detection Model",
-            "version": "v2.4.1",
-            "accuracy": 96.8,
-            "status": "Active"
-        },
+    predictions_today = db.query(
+        PredictionLog
+    ).filter(
+        PredictionLog.created_at >= datetime.combine(
+            today,
+            datetime.min.time()
+        )
+    ).count()
 
-        {
-            "id": "MOD-002",
-            "name": "Transaction Risk Model",
-            "version": "v1.8.3",
-            "accuracy": 94.5,
-            "status": "Active"
-        },
+    return {
+        "predictions_today": predictions_today,
 
-        {
-            "id": "MOD-003",
-            "name": "Anomaly Detection Model",
-            "version": "v3.1.0",
-            "accuracy": 92.7,
-            "status": "Training"
-        }
-    ]
+        "models": [
 
+            {
+                "id": "MOD-001",
+                "name": "Fraud Detection Model",
+                "version": "v2.4.1",
+                "accuracy": 96.8,
+                "status": "Production"
+            },
+
+            {
+                "id": "MOD-002",
+                "name": "Transaction Risk Model",
+                "version": "v1.8.3",
+                "accuracy": 94.5,
+                "status": "Production"
+            },
+
+            {
+                "id": "MOD-003",
+                "name": "Anomaly Detection Model",
+                "version": "v3.1.0",
+                "accuracy": 92.7,
+                "status": "Monitoring"
+            }
+
+        ]
+    }
 
 # =========================================================
 # REPORTS

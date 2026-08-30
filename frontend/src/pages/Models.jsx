@@ -3,6 +3,7 @@ import { getModels } from "../api"
 
 function Models() {
   const [models, setModels] = useState([])
+  const [predictionsToday, setPredictionsToday] = useState(0)
   const [filter, setFilter] = useState("All Models")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -18,6 +19,7 @@ function Models() {
           : data.models || data.data || []
 
         setModels(modelData)
+        setPredictionsToday(data.predictions_today || 0)
         setLoading(false)
       })
       .catch((err) => {
@@ -218,9 +220,7 @@ function Models() {
           <span>Predictions Today</span>
 
           <strong>
-            {normalizedModels.length > 0
-              ? `${(normalizedModels.length * 4.6).toFixed(1)}K`
-              : "0"}
+            {predictionsToday.toLocaleString("en-IN")}
           </strong>
 
           <small>
