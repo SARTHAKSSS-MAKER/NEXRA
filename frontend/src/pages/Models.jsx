@@ -218,7 +218,7 @@ function Models() {
         </div>
 
 
-        <div className="model-stat">
+        <div className="model-stat"
 
           <span>Predictions Today</span>
 
