@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getTransactions } from "../api"
+import { getTransactions, predictFraud } from "../api"
 
 function Transactions() {
   const [showDateMenu, setShowDateMenu] = useState(false)
@@ -8,6 +8,14 @@ function Transactions() {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+
+  const [features, setFeatures] = useState(
+    Array(30).fill("")
+  )
+
+  const [prediction, setPrediction] = useState(null)
+  const [predictionLoading, setPredictionLoading] = useState(false)
+  const [predictionError, setPredictionError] = useState("")
 
   const dateOptions = [
     "Last 24 Hours",
@@ -20,29 +28,92 @@ function Transactions() {
     setShowDateMenu(false)
   }
 
-  // GET transactions from FastAPI
   useEffect(() => {
-  getTransactions()
-    .then((data) => {
-      setTransactions(data)
-      setLoading(false)
-    })
-    .catch((error) => {
-      console.error("Transaction API error:", error)
-      setError("Unable to connect to NEXRA backend")
-      setLoading(false)
-    })
-}, [])
+    getTransactions()
+      .then((data) => {
+        setTransactions(data)
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.error("Transaction API error:", error)
+        setError("Unable to connect to NEXRA backend")
+        setLoading(false)
+      })
+  }, [])
 
-  // Calculate stats from actual database data
+  const handleFeatureChange = (index, value) => {
+    setFeatures((prev) => {
+      const updated = [...prev]
+      updated[index] = value
+      return updated
+    })
+
+    setPrediction(null)
+    setPredictionError("")
+  }
+
+  const loadExampleTransaction = () => {
+    const example = Array(30).fill(0)
+    example[29] = 100
+
+    setFeatures(example.map(String))
+    setPrediction(null)
+    setPredictionError("")
+  }
+
+  const clearPredictionForm = () => {
+    setFeatures(Array(30).fill(""))
+    setPrediction(null)
+    setPredictionError("")
+  }
+
+  const runFraudAnalysis = async () => {
+    setPredictionError("")
+    setPrediction(null)
+
+    const hasEmptyValue = features.some(
+      (feature) => feature === ""
+    )
+
+    if (hasEmptyValue) {
+      setPredictionError(
+        "Please enter all 30 model features before running the analysis."
+      )
+      return
+    }
+
+    const numericFeatures = features.map(Number)
+
+    if (numericFeatures.some((value) => !Number.isFinite(value))) {
+      setPredictionError(
+        "All model features must contain valid numbers."
+      )
+      return
+    }
+
+    setPredictionLoading(true)
+
+    try {
+      const result = await predictFraud(numericFeatures)
+      setPrediction(result)
+    } catch (error) {
+      console.error("Fraud prediction error:", error)
+      setPredictionError(
+        "Unable to run fraud prediction. Check that the NEXRA backend is running."
+      )
+    } finally {
+      setPredictionLoading(false)
+    }
+  }
+
   const totalTransactions = transactions.length
 
   const highRiskTransactions = transactions.filter(
-    (transaction) => transaction.risk_score >= 80
+    (transaction) => Number(transaction.risk_score) >= 80
   ).length
 
   const flaggedTransactions = transactions.filter(
-    (transaction) => transaction.risk_score >= 60
+    (transaction) => Number(transaction.risk_score) >= 60
   ).length
 
   const averageRisk =
@@ -56,10 +127,15 @@ function Transactions() {
         ).toFixed(1)
       : "0.0"
 
+  const featureNames = [
+    "Time",
+    ...Array.from({ length: 28 }, (_, index) => `V${index + 1}`),
+    "Amount",
+  ]
+
   return (
     <div className="page transaction-page">
 
-      {/* PAGE HEADING */}
       <div className="page-heading">
 
         <div>
@@ -74,8 +150,6 @@ function Transactions() {
           </p>
         </div>
 
-
-        {/* DATE SELECTOR */}
         <div
           style={{
             position: "relative",
@@ -109,8 +183,6 @@ function Transactions() {
 
           </button>
 
-
-          {/* DROPDOWN */}
           {showDateMenu && (
             <div
               style={{
@@ -189,7 +261,6 @@ function Transactions() {
       </div>
 
 
-      {/* TRANSACTION STATS */}
       <section className="transaction-stats">
 
         <div className="transaction-stat">
@@ -204,7 +275,6 @@ function Transactions() {
           </small>
         </div>
 
-
         <div className="transaction-stat">
           <span>High Risk</span>
 
@@ -217,7 +287,6 @@ function Transactions() {
           </small>
         </div>
 
-
         <div className="transaction-stat">
           <span>Flagged</span>
 
@@ -229,7 +298,6 @@ function Transactions() {
             Risk score ≥ 60
           </small>
         </div>
-
 
         <div className="transaction-stat">
           <span>Avg. Risk Score</span>
@@ -246,7 +314,215 @@ function Transactions() {
       </section>
 
 
-      {/* TRANSACTION STREAM */}
+      <section
+        className="panel"
+        style={{
+          marginBottom: "24px",
+          padding: "24px",
+        }}
+      >
+
+        <div className="panel-header">
+
+          <div>
+            <h2>Model 1 — Fraud Analysis</h2>
+
+            <p>
+              Run a transaction through the trained financial fraud detection model
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
+          >
+
+            <button
+              type="button"
+              className="filter-button"
+              onClick={loadExampleTransaction}
+            >
+              Load Example
+            </button>
+
+            <button
+              type="button"
+              className="filter-button"
+              onClick={clearPredictionForm}
+            >
+              Clear
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: "12px",
+            marginTop: "20px",
+          }}
+        >
+
+          {featureNames.map((name, index) => (
+
+            <div key={name}>
+
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "6px",
+                  fontSize: "12px",
+                  color: "#999",
+                }}
+              >
+                {name}
+              </label>
+
+              <input
+                type="number"
+                step="any"
+                value={features[index]}
+                onChange={(e) =>
+                  handleFeatureChange(
+                    index,
+                    e.target.value
+                  )
+                }
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "10px 12px",
+                  borderRadius: "8px",
+                  border:
+                    "1px solid rgba(255,255,255,0.12)",
+                  background: "#111",
+                  color: "#fff",
+                  outline: "none",
+                }}
+              />
+
+            </div>
+
+          ))}
+
+        </div>
+
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: "20px",
+          }}
+        >
+
+          <button
+            type="button"
+            className="settings-save-btn"
+            onClick={runFraudAnalysis}
+            disabled={predictionLoading}
+          >
+            {predictionLoading
+              ? "Analyzing..."
+              : "Run Fraud Analysis"}
+          </button>
+
+        </div>
+
+
+        {predictionError && (
+          <div
+            style={{
+              marginTop: "18px",
+              padding: "14px",
+              borderRadius: "10px",
+              background: "rgba(255,80,80,0.08)",
+              border:
+                "1px solid rgba(255,80,80,0.2)",
+              color: "#ff7777",
+            }}
+          >
+            {predictionError}
+          </div>
+        )}
+
+
+        {prediction && (
+          <div
+            style={{
+              marginTop: "22px",
+              padding: "20px",
+              borderRadius: "14px",
+              background: "rgba(255,255,255,0.025)",
+              border:
+                "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(160px, 1fr))",
+                gap: "14px",
+              }}
+            >
+
+              <PredictionMetric
+                label="Result"
+                value={prediction.result}
+              />
+
+              <PredictionMetric
+                label="Fraud Probability"
+                value={`${Number(
+                  prediction.fraud_probability_percent ??
+                  prediction.fraud_probability * 100
+                ).toFixed(2)}%`}
+              />
+
+              <PredictionMetric
+                label="Risk Score"
+                value={`${Number(
+                  prediction.risk_score
+                ).toFixed(2)}/100`}
+              />
+
+              <PredictionMetric
+                label="Risk Level"
+                value={prediction.risk_level}
+              />
+
+              <PredictionMetric
+                label="Status"
+                value={prediction.status}
+              />
+
+              <PredictionMetric
+                label="Prediction"
+                value={
+                  prediction.fraud
+                    ? "Fraud"
+                    : "Legitimate"
+                }
+              />
+
+            </div>
+
+          </div>
+        )}
+
+      </section>
+
+
       <section className="panel transactions-panel">
 
         <div className="panel-header transactions-header">
@@ -258,7 +534,6 @@ function Transactions() {
               Latest processed transactions
             </p>
           </div>
-
 
           <div className="transaction-controls">
 
@@ -281,7 +556,6 @@ function Transactions() {
         </div>
 
 
-        {/* ERROR */}
         {error && (
           <div
             style={{
@@ -295,7 +569,6 @@ function Transactions() {
         )}
 
 
-        {/* LOADING */}
         {loading && !error && (
           <div
             style={{
@@ -309,7 +582,6 @@ function Transactions() {
         )}
 
 
-        {/* TABLE */}
         {!loading && !error && (
           <div className="transaction-table">
 
@@ -344,7 +616,6 @@ function Transactions() {
                   key={transaction.id}
                 >
 
-                  {/* TRANSACTION */}
                   <div>
                     <strong>
                       {transaction.id}
@@ -355,34 +626,24 @@ function Transactions() {
                     </small>
                   </div>
 
-
-                  {/* USER */}
                   <span>
-                    — 
+                    —
                   </span>
 
-
-                  {/* AMOUNT */}
                   <strong>
                     ₹{Number(
                       transaction.amount
                     ).toLocaleString("en-IN")}
                   </strong>
 
-
-                  {/* LOCATION */}
                   <span>
                     {transaction.location}
                   </span>
 
-
-                  {/* DEVICE */}
                   <span className="device suspicious">
                     —
                   </span>
 
-
-                  {/* RISK SCORE */}
                   <div className="risk-score">
 
                     <div className="risk-score-bar">
@@ -401,8 +662,6 @@ function Transactions() {
 
                   </div>
 
-
-                  {/* STATUS */}
                   <span
                     className={`transaction-status ${
                       status === "High Risk"
@@ -415,8 +674,6 @@ function Transactions() {
                     {transaction.status || status}
                   </span>
 
-
-                  {/* TIME */}
                   <span className="transaction-time">
                     —
                   </span>
@@ -433,5 +690,33 @@ function Transactions() {
     </div>
   )
 }
+
+
+function PredictionMetric({ label, value }) {
+  return (
+    <div>
+      <span
+        style={{
+          display: "block",
+          marginBottom: "6px",
+          fontSize: "12px",
+          color: "#888",
+        }}
+      >
+        {label}
+      </span>
+
+      <strong
+        style={{
+          display: "block",
+          fontSize: "18px",
+        }}
+      >
+        {value}
+      </strong>
+    </div>
+  )
+}
+
 
 export default Transactions
