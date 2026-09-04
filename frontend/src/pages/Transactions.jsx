@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getTransactions, predictFraud, getTestTransaction } from "../api"
+import { getTransactions, predictFraud, getTestTransactions } from "../api"
 
 function Transactions() {
   const [showDateMenu, setShowDateMenu] = useState(false)
@@ -17,6 +17,8 @@ function Transactions() {
   const [prediction, setPrediction] = useState(null)
   const [predictionLoading, setPredictionLoading] = useState(false)
   const [predictionError, setPredictionError] = useState("")
+  const [selectedTestTransaction, setSelectedTestTransaction] = useState(null)
+  const [selectedTestIndex, setSelectedTestIndex] = useState(0)
 
   const dateOptions = [
     "Last 24 Hours",
@@ -57,14 +59,20 @@ function Transactions() {
     setPredictionError("")
   }
 
-  const loadExampleTransaction = () => {
-    const example = Array(30).fill(0)
-    example[29] = 100
-
-    setFeatures(example.map(String))
-    setPrediction(null)
-    setPredictionError("")
+const loadExampleTransaction = (index = selectedTestIndex) => {
+  if (testTransactions.length === 0) {
+    setPredictionError("No test transactions are available.")
+    return
   }
+
+  const transaction = testTransactions[index]
+
+  setFeatures(transaction.features.map(String))
+  setSelectedTestIndex(index)
+  setSelectedTestTransaction(transaction)
+  setPrediction(null)
+  setPredictionError("")
+}
 
   const clearPredictionForm = () => {
     setFeatures(Array(30).fill(""))
@@ -336,6 +344,34 @@ function Transactions() {
               Run a transaction through the trained financial fraud detection model
             </p>
           </div>
+          {selectedTestTransaction && (
+  <div
+    style={{
+      marginTop: "12px",
+      padding: "10px 14px",
+      borderRadius: "8px",
+      background: "rgba(255,255,255,0.04)",
+      border: "1px solid rgba(255,255,255,0.08)",
+      fontSize: "13px",
+    }}
+  >
+    <strong>
+      Testing: {selectedTestTransaction.id}
+    </strong>
+
+    <span
+      style={{
+        marginLeft: "12px",
+        color:
+          selectedTestTransaction.actual_class === 1
+            ? "#ff7777"
+            : "#9fd89f",
+      }}
+    >
+      Actual: {selectedTestTransaction.actual_label}
+    </span>
+  </div>
+)}
 
           <div
             style={{
@@ -345,13 +381,27 @@ function Transactions() {
             }}
           >
 
-            <button
-              type="button"
-              className="filter-button"
-              onClick={loadExampleTransaction}
-            >
-              Load Example
-            </button>
+            <select
+  value={selectedTestIndex}
+  onChange={(e) =>
+    loadExampleTransaction(Number(e.target.value))
+  }
+  className="filter-button"
+>
+  {testTransactions.map((transaction, index) => (
+    <option key={transaction.id} value={index}>
+      {transaction.id} — {transaction.actual_label}
+    </option>
+  ))}
+</select>
+
+          <button
+  type="button"
+  className="filter-button"
+  onClick={() => loadExampleTransaction(5)}
+>
+  Load Fraud Example
+</button>
 
             <button
               type="button"
