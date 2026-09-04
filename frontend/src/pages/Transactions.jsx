@@ -569,6 +569,37 @@ const loadExampleTransaction = (index = selectedTestIndex) => {
                     : "Legitimate"
                 }
               />
+              <div
+  style={{
+    marginTop: "16px",
+    paddingTop: "14px",
+    borderTop: "1px solid rgba(255,255,255,0.08)",
+  }}
+>
+  <div style={{ fontSize: "12px", opacity: 0.6 }}>
+    Actual vs AI Prediction
+  </div>
+
+  <div
+    style={{
+      marginTop: "6px",
+      fontWeight: "600",
+      color:
+        selectedTestTransaction &&
+        selectedTestTransaction.actual_class ===
+          (prediction.fraud ? 1 : 0)
+          ? "#9fd89f"
+          : "#ff7777",
+    }}
+  >
+    {selectedTestTransaction
+      ? selectedTestTransaction.actual_class ===
+        (prediction.fraud ? 1 : 0)
+        ? "✓ Correct Prediction"
+        : "✕ Incorrect Prediction"
+      : "No test transaction selected"}
+  </div>
+</div>
 
             </div>
 

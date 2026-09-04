@@ -90,6 +90,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 MODEL_PATH = BASE_DIR / "ml" / "models" / "fraud_detection_model.pkl"
 SCALER_PATH = BASE_DIR / "ml" / "models" / "scaler.pkl"
 DATASET_PATH = BASE_DIR / "ml" / "datasets" / "creditcard.csv"
+TEST_DATA_PATH = BASE_DIR / "ml" / "models" / "test_data.pkl"
 
 
 print("\n" + "=" * 60)
@@ -303,7 +304,87 @@ def get_test_transactions():
         "count": len(transactions),
         "transactions": transactions
     }
+@app.get("/api/evaluate")
+def evaluate_model():
+    if not MODEL_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Fraud detection model not found"
+        )
 
+    if not SCALER_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Scaler not found"
+        )
+
+    if not TEST_DATA_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Held-out test data not found"
+        )
+
+    test_data = joblib.load(TEST_DATA_PATH)
+
+    X_test = test_data["X_test"]
+    y_test = test_data["y_test"]
+
+    evaluation_model = joblib.load(MODEL_PATH)
+    evaluation_scaler = joblib.load(SCALER_PATH)
+
+    X_test_scaled = evaluation_scaler.transform(X_test)
+
+    y_pred = evaluation_model.predict(X_test_scaled)
+
+    from sklearn.metrics import (
+        accuracy_score,
+        precision_score,
+        recall_score,
+        f1_score,
+        confusion_matrix
+    )
+
+    accuracy = accuracy_score(
+        y_test,
+        y_pred
+    )
+
+    precision = precision_score(
+        y_test,
+        y_pred,
+        zero_division=0
+    )
+
+    recall = recall_score(
+        y_test,
+        y_pred,
+        zero_division=0
+    )
+
+    f1 = f1_score(
+        y_test,
+        y_pred,
+        zero_division=0
+    )
+
+    cm = confusion_matrix(
+        y_test,
+        y_pred
+    )
+
+    return {
+        "dataset": "Credit Card Fraud Detection",
+        "test_samples": int(len(y_test)),
+        "accuracy": round(float(accuracy), 4),
+        "precision": round(float(precision), 4),
+        "recall": round(float(recall), 4),
+        "f1_score": round(float(f1), 4),
+        "confusion_matrix": cm.tolist(),
+        "true_negative": int(cm[0][0]),
+        "false_positive": int(cm[0][1]),
+        "false_negative": int(cm[1][0]),
+        "true_positive": int(cm[1][1])
+    }
 # =========================================================
 # FRAUD PREDICTION
 # =========================================================

@@ -86,3 +86,7 @@ export const predictFraud = (features) => {
 export const getTestTransactions = () => {
   return request("/api/test-transactions")
 }
+
+export const getEvaluation = () => {
+  return request("/api/evaluate")
+}

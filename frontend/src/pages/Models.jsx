@@ -1,36 +1,42 @@
 import { useEffect, useMemo, useState } from "react"
-import { getModels } from "../api"
+import { getModels, getEvaluation } from "../api"
 
 function Models() {
   const [models, setModels] = useState([])
+  const [evaluation, setEvaluation] = useState(null)
   const [predictionsToday, setPredictionsToday] = useState(0)
   const [filter, setFilter] = useState("All Models")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  useEffect(() => {
-    getModels()
-      .then((data) => {
-        // Supports either:
-        // /api/models -> [...]
-        // /api/models -> { models: [...] }
-        const modelData = Array.isArray(data)
-          ? data
-          : data.models || data.data || []
+useEffect(() => {
+  Promise.all([
+    getModels(),
+    getEvaluation(),
+  ])
+    .then(([data, evaluationData]) => {
+      const modelData = Array.isArray(data)
+        ? data
+        : data.models || data.data || []
 
-        setModels(modelData)
-        setPredictionsToday(Array.isArray(data)
-        ? 0
-        :
-        Number(data.predictions_today || 0))
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error("Models API error:", err)
-        setError("Unable to connect to NEXRA backend")
-        setLoading(false)
-      })
-  }, [])
+      setModels(modelData)
+
+      setEvaluation(evaluationData)
+
+      setPredictionsToday(
+        Array.isArray(data)
+          ? 0
+          : Number(data.predictions_today || 0)
+      )
+
+      setLoading(false)
+    })
+    .catch((err) => {
+      console.error("Models API error:", err)
+      setError("Unable to connect to NEXRA backend")
+      setLoading(false)
+    })
+}, [])
 
   const normalizedModels = useMemo(() => {
     return models.map((model, index) => ({
