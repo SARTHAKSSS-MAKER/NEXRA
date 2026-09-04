@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import datetime, date
 import joblib
 import numpy as np
-
+import pandas as pd
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
@@ -89,6 +89,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 
 MODEL_PATH = BASE_DIR / "ml" / "models" / "fraud_detection_model.pkl"
 SCALER_PATH = BASE_DIR / "ml" / "models" / "scaler.pkl"
+DATASET_PATH = BASE_DIR / "ml" / "datasets" / "creditcard.csv"
 
 
 print("\n" + "=" * 60)
@@ -243,6 +244,65 @@ def ml_status():
         "status": "ready" if ready else "not_ready"
     }
 
+@app.get("/api/test-transactions")
+def get_test_transactions():
+    if not DATASET_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Credit card dataset not found"
+        )
+
+    df = pd.read_csv(DATASET_PATH)
+
+    feature_columns = [
+        "Time",
+        *[f"V{i}" for i in range(1, 29)],
+        "Amount"
+    ]
+
+    required_columns = [*feature_columns, "Class"]
+
+    missing_columns = [
+        column
+        for column in required_columns
+        if column not in df.columns
+    ]
+
+    if missing_columns:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Dataset is missing columns: {missing_columns}"
+        )
+
+    legitimate = df[df["Class"] == 0].head(5)
+    fraud = df[df["Class"] == 1].head(5)
+
+    selected = pd.concat(
+        [legitimate, fraud],
+        ignore_index=True
+    )
+
+    transactions = []
+
+    for index, row in selected.iterrows():
+        transactions.append({
+            "id": f"TEST-{index + 1:04d}",
+            "actual_class": int(row["Class"]),
+            "actual_label": (
+                "Fraud"
+                if int(row["Class"]) == 1
+                else "Legitimate"
+            ),
+            "features": [
+                float(row[column])
+                for column in feature_columns
+            ]
+        })
+
+    return {
+        "count": len(transactions),
+        "transactions": transactions
+    }
 
 # =========================================================
 # FRAUD PREDICTION

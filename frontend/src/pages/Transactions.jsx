@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react"
-import { getTransactions, predictFraud } from "../api"
+import { getTransactions, predictFraud, getTestTransaction } from "../api"
 
 function Transactions() {
   const [showDateMenu, setShowDateMenu] = useState(false)
   const [dateRange, setDateRange] = useState("Last 24 Hours")
 
   const [transactions, setTransactions] = useState([])
+  const [testTransactions, setTestTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -28,18 +29,22 @@ function Transactions() {
     setShowDateMenu(false)
   }
 
-  useEffect(() => {
-    getTransactions()
-      .then((data) => {
-        setTransactions(data)
-        setLoading(false)
-      })
-      .catch((error) => {
-        console.error("Transaction API error:", error)
-        setError("Unable to connect to NEXRA backend")
-        setLoading(false)
-      })
-  }, [])
+ useEffect(() => {
+  Promise.all([
+    getTransactions(),
+    getTestTransactions(),
+  ])
+    .then(([transactionData, testData]) => {
+      setTransactions(transactionData)
+      setTestTransactions(testData.transactions || [])
+      setLoading(false)
+    })
+    .catch((error) => {
+      console.error("Transaction API error:", error)
+      setError("Unable to connect to NEXRA backend")
+      setLoading(false)
+    })
+}, [])
 
   const handleFeatureChange = (index, value) => {
     setFeatures((prev) => {
