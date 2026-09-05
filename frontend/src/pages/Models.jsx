@@ -9,34 +9,33 @@ function Models() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-useEffect(() => {
-  Promise.all([
-    getModels(),
-    getEvaluation(),
-  ])
-    .then(([data, evaluationData]) => {
-      const modelData = Array.isArray(data)
-        ? data
-        : data.models || data.data || []
+  useEffect(() => {
+    Promise.all([
+      getModels(),
+      getEvaluation(),
+    ])
+      .then(([data, evaluationData]) => {
+        const modelData = Array.isArray(data)
+          ? data
+          : data.models || data.data || []
 
-      setModels(modelData)
+        setModels(modelData)
+        setEvaluation(evaluationData)
 
-      setEvaluation(evaluationData)
+        setPredictionsToday(
+          Array.isArray(data)
+            ? 0
+            : Number(data.predictions_today || 0)
+        )
 
-      setPredictionsToday(
-        Array.isArray(data)
-          ? 0
-          : Number(data.predictions_today || 0)
-      )
-
-      setLoading(false)
-    })
-    .catch((err) => {
-      console.error("Models API error:", err)
-      setError("Unable to connect to NEXRA backend")
-      setLoading(false)
-    })
-}, [])
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Models API error:", err)
+        setError("Unable to connect to NEXRA backend")
+        setLoading(false)
+      })
+  }, [])
 
   const normalizedModels = useMemo(() => {
     return models.map((model, index) => ({
@@ -56,24 +55,23 @@ useEffect(() => {
         model.version ||
         model.model_version ||
         "v1.0.0",
+accuracy: Number(
+  model.name === "Fraud Detection Model"
+    ? evaluation?.accuracy * 100 || 0
+    : model.accuracy ?? model.accuracy_score ?? 0
+),
 
-      accuracy: Number(
-        model.accuracy ??
-        model.accuracy_score ??
-        0
-      ),
+precision: Number(
+  model.name === "Fraud Detection Model"
+    ? evaluation?.precision * 100 || 0
+    : model.precision ?? model.precision_score ?? 0
+),
 
-      precision: Number(
-        model.precision ??
-        model.precision_score ??
-        0
-      ),
-
-      recall: Number(
-        model.recall ??
-        model.recall_score ??
-        0
-      ),
+recall: Number(
+  model.name === "Fraud Detection Model"
+    ? evaluation?.recall * 100 || 0
+    : model.recall ?? model.recall_score ?? 0
+),
 
       status:
         model.status ||
@@ -166,7 +164,6 @@ useEffect(() => {
   return (
     <div className="page models-page">
 
-      {/* PAGE HEADING */}
       <div className="page-heading">
 
         <div>
@@ -190,12 +187,9 @@ useEffect(() => {
 
       </div>
 
-
-      {/* MODEL OVERVIEW */}
       <section className="model-overview">
 
         <div className="model-stat">
-
           <span>Active Models</span>
 
           <strong>
@@ -205,12 +199,9 @@ useEffect(() => {
           <small>
             All systems operational
           </small>
-
         </div>
 
-
         <div className="model-stat">
-
           <span>Avg. Accuracy</span>
 
           <strong>
@@ -220,12 +211,9 @@ useEffect(() => {
           <small>
             Across deployed models
           </small>
-
         </div>
 
-
         <div className="model-stat">
-
           <span>Predictions Today</span>
 
           <strong>
@@ -235,12 +223,9 @@ useEffect(() => {
           <small>
             Processed by risk engine
           </small>
-
         </div>
 
-
         <div className="model-stat">
-
           <span>Model Health</span>
 
           <strong className="healthy">
@@ -250,13 +235,10 @@ useEffect(() => {
           <small>
             Operating normally
           </small>
-
         </div>
 
       </section>
 
-
-      {/* MODELS PANEL */}
       <section className="panel models-panel">
 
         <div className="panel-header">
@@ -269,8 +251,6 @@ useEffect(() => {
             </p>
           </div>
 
-
-          {/* FILTER */}
           <button
             type="button"
             className="model-filter"
@@ -289,8 +269,6 @@ useEffect(() => {
 
         </div>
 
-
-        {/* MODEL TABLE */}
         <div className="models-table">
 
           <div className="models-table-head">
@@ -304,7 +282,6 @@ useEffect(() => {
             <span>Updated</span>
 
           </div>
-
 
           {filteredModels.length === 0 ? (
 
@@ -327,7 +304,6 @@ useEffect(() => {
                 key={model.id}
               >
 
-                {/* MODEL */}
                 <div className="model-name">
 
                   <div className="model-icon">
@@ -348,38 +324,28 @@ useEffect(() => {
 
                 </div>
 
-
-                {/* VERSION */}
                 <span className="model-version">
                   {model.version}
                 </span>
 
-
-                {/* ACCURACY */}
                 <strong className="model-score">
                   {model.accuracy
                     ? `${model.accuracy}%`
                     : "—"}
                 </strong>
 
-
-                {/* PRECISION */}
                 <strong className="model-score">
                   {model.precision
                     ? `${model.precision}%`
                     : "—"}
                 </strong>
 
-
-                {/* RECALL */}
                 <strong className="model-score">
                   {model.recall
                     ? `${model.recall}%`
                     : "—"}
                 </strong>
 
-
-                {/* STATUS */}
                 <span
                   className={`model-status ${
                     model.status === "Production"
@@ -391,8 +357,6 @@ useEffect(() => {
                   {model.status}
                 </span>
 
-
-                {/* UPDATED */}
                 <span className="model-updated">
                   {model.updated}
                 </span>
@@ -407,12 +371,8 @@ useEffect(() => {
 
       </section>
 
-
-      {/* LOWER SECTION */}
       <div className="grid-two model-lower">
 
-
-        {/* PERFORMANCE */}
         <section className="panel model-performance">
 
           <div className="panel-header">
@@ -434,7 +394,6 @@ useEffect(() => {
 
           </div>
 
-
           <div className="model-chart">
 
             <div className="model-chart-grid">
@@ -446,7 +405,6 @@ useEffect(() => {
               <span>80%</span>
 
             </div>
-
 
             <svg
               viewBox="0 0 500 170"
@@ -469,7 +427,6 @@ useEffect(() => {
                 strokeWidth="2"
               />
 
-
               <path
                 d="
                   M0 125
@@ -490,7 +447,6 @@ useEffect(() => {
 
             </svg>
 
-
             <div className="model-chart-labels">
 
               <span>Aug 1</span>
@@ -505,8 +461,6 @@ useEffect(() => {
 
         </section>
 
-
-        {/* MODEL HEALTH */}
         <section className="panel model-health">
 
           <div className="panel-header">
@@ -521,11 +475,8 @@ useEffect(() => {
 
           </div>
 
-
           <div className="health-list">
 
-
-            {/* LATENCY */}
             <div className="health-item">
 
               <div>
@@ -552,8 +503,6 @@ useEffect(() => {
 
             </div>
 
-
-            {/* DATA QUALITY */}
             <div className="health-item">
 
               <div>
@@ -579,8 +528,6 @@ useEffect(() => {
 
             </div>
 
-
-            {/* MODEL STABILITY */}
             <div className="health-item">
 
               <div>
@@ -606,8 +553,6 @@ useEffect(() => {
 
             </div>
 
-
-            {/* DRIFT */}
             <div className="health-item">
 
               <div>
@@ -625,7 +570,6 @@ useEffect(() => {
               </div>
 
             </div>
-
 
           </div>
 

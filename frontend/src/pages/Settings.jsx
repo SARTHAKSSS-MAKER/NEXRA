@@ -7,7 +7,7 @@ function Settings() {
     real_time_monitoring: true,
     auto_block_high_risk: false,
     risk_threshold: 80,
-    model_version: "v2.4.1",
+    model_version: "Financial Fraud Detection v1.0",
   })
 
   const [loading, setLoading] = useState(true)
@@ -15,21 +15,35 @@ function Settings() {
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
-  // Load settings from backend
   useEffect(() => {
-    getSettings()
-      .then((data) => {
-        setSettings(data)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error("Settings API error:", err)
-        setError("Unable to load NEXRA settings")
-        setLoading(false)
-      })
+    loadSettings()
   }, [])
 
-  // Toggle setting
+  const loadSettings = async () => {
+    try {
+      const data = await getSettings()
+
+      setSettings({
+        notifications: data.notifications ?? true,
+        real_time_monitoring:
+          data.real_time_monitoring ?? true,
+        auto_block_high_risk:
+          data.auto_block_high_risk ?? false,
+        risk_threshold:
+          data.risk_threshold ?? 80,
+        model_version:
+          data.model_version ??
+          "Financial Fraud Detection v1.0",
+      })
+
+      setLoading(false)
+    } catch (err) {
+      console.error("Settings API error:", err)
+      setError("Unable to load NEXRA settings")
+      setLoading(false)
+    }
+  }
+
   const toggleSetting = (key) => {
     setSettings((prev) => ({
       ...prev,
@@ -37,9 +51,9 @@ function Settings() {
     }))
 
     setMessage("")
+    setError("")
   }
 
-  // Update input/select
   const handleChange = (key, value) => {
     setSettings((prev) => ({
       ...prev,
@@ -47,30 +61,57 @@ function Settings() {
     }))
 
     setMessage("")
+    setError("")
   }
 
-  // Save settings to backend
   const handleSave = async () => {
     setSaving(true)
     setMessage("")
     setError("")
 
     try {
-      const dataToSend = {
-        notifications: settings.notifications,
-        real_time_monitoring: settings.real_time_monitoring,
-        auto_block_high_risk: settings.auto_block_high_risk,
-        risk_threshold: Number(settings.risk_threshold),
-        model_version: settings.model_version,
+      const payload = {
+        notifications: Boolean(
+          settings.notifications
+        ),
+
+        real_time_monitoring: Boolean(
+          settings.real_time_monitoring
+        ),
+
+        auto_block_high_risk: Boolean(
+          settings.auto_block_high_risk
+        ),
+
+        risk_threshold: Math.min(
+          Math.max(
+            Number(settings.risk_threshold),
+            0
+          ),
+          100
+        ),
+
+        model_version:
+          settings.model_version,
       }
 
-      const response = await updateSettings(dataToSend)
+      const response =
+        await updateSettings(payload)
 
       setSettings(response.settings)
-      setMessage("Settings saved successfully")
+
+      setMessage(
+        "Settings saved successfully"
+      )
     } catch (err) {
-      console.error("Settings update error:", err)
-      setError("Unable to save settings")
+      console.error(
+        "Settings update error:",
+        err
+      )
+
+      setError(
+        "Unable to save settings"
+      )
     } finally {
       setSaving(false)
     }
@@ -92,46 +133,38 @@ function Settings() {
     )
   }
 
-  if (error && !settings) {
-    return (
-      <div className="page settings-page">
-        <div
-          style={{
-            padding: "60px",
-            textAlign: "center",
-            color: "#ff6b6b",
-          }}
-        >
-          {error}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="page settings-page">
 
-      {/* HEADER */}
       <div className="page-heading settings-heading">
         <div>
-          <p className="eyebrow">SYSTEM CONFIGURATION</p>
+          <p className="eyebrow">
+            SYSTEM CONFIGURATION
+          </p>
 
-          <h1>Settings</h1>
+          <h1>
+            Settings
+          </h1>
 
           <p className="subtitle">
-            Manage your NEXRA platform preferences and security controls
+            Manage NEXRA fraud detection and security controls
           </p>
         </div>
       </div>
 
 
-      {/* PROFILE */}
       <section className="panel settings-profile">
 
         <div className="settings-section-header">
+
           <div>
-            <h2>Profile</h2>
-            <p>Your NEXRA account information</p>
+            <h2>
+              Profile
+            </h2>
+
+            <p>
+              Your NEXRA account information
+            </p>
           </div>
 
           <button
@@ -140,6 +173,7 @@ function Settings() {
           >
             Edit Profile
           </button>
+
         </div>
 
 
@@ -165,18 +199,33 @@ function Settings() {
           <div className="profile-details">
 
             <div className="profile-detail">
-              <span>Email</span>
-              <strong>sarthak@nexra.ai</strong>
+              <span>
+                Email
+              </span>
+
+              <strong>
+                sarthak@nexra.ai
+              </strong>
             </div>
 
             <div className="profile-detail">
-              <span>Role</span>
-              <strong>Security Analyst</strong>
+              <span>
+                Role
+              </span>
+
+              <strong>
+                Security Analyst
+              </strong>
             </div>
 
             <div className="profile-detail">
-              <span>Access Level</span>
-              <strong>Advanced</strong>
+              <span>
+                Access Level
+              </span>
+
+              <strong>
+                Advanced
+              </strong>
             </div>
 
           </div>
@@ -186,21 +235,23 @@ function Settings() {
       </section>
 
 
-      {/* SETTINGS GRID */}
       <div className="settings-grid">
 
 
-        {/* DETECTION PREFERENCES */}
         <section className="panel settings-card">
 
           <div className="settings-section-header">
+
             <div>
-              <h2>Detection Preferences</h2>
+              <h2>
+                Detection Preferences
+              </h2>
 
               <p>
-                Configure fraud detection behavior
+                Configure financial fraud detection behavior
               </p>
             </div>
+
           </div>
 
 
@@ -208,28 +259,42 @@ function Settings() {
 
             <SettingToggle
               title="Real-time Fraud Detection"
-              description="Analyze transactions as they occur"
-              enabled={settings.real_time_monitoring}
+              description="Analyze financial transactions as they occur"
+              enabled={
+                settings.real_time_monitoring
+              }
               onClick={() =>
-                toggleSetting("real_time_monitoring")
+                toggleSetting(
+                  "real_time_monitoring"
+                )
               }
             />
+
 
             <SettingToggle
               title="High-Risk Alerts"
-              description="Receive alerts for high-risk transactions"
-              enabled={settings.notifications}
+              description="Receive alerts for suspicious transactions"
+              enabled={
+                settings.notifications
+              }
               onClick={() =>
-                toggleSetting("notifications")
+                toggleSetting(
+                  "notifications"
+                )
               }
             />
 
+
             <SettingToggle
               title="Automatic High-Risk Blocking"
-              description="Automatically block transactions above the risk threshold"
-              enabled={settings.auto_block_high_risk}
+              description="Block transactions above the configured risk threshold"
+              enabled={
+                settings.auto_block_high_risk
+              }
               onClick={() =>
-                toggleSetting("auto_block_high_risk")
+                toggleSetting(
+                  "auto_block_high_risk"
+                )
               }
             />
 
@@ -238,17 +303,20 @@ function Settings() {
         </section>
 
 
-        {/* RISK ENGINE */}
         <section className="panel settings-card">
 
           <div className="settings-section-header">
+
             <div>
-              <h2>Risk Engine</h2>
+              <h2>
+                Risk Engine
+              </h2>
 
               <p>
-                Configure risk scoring behavior
+                Configure financial transaction risk scoring
               </p>
             </div>
+
           </div>
 
 
@@ -266,7 +334,9 @@ function Settings() {
                   type="number"
                   min="0"
                   max="100"
-                  value={settings.risk_threshold}
+                  value={
+                    settings.risk_threshold
+                  }
                   onChange={(e) =>
                     handleChange(
                       "risk_threshold",
@@ -275,7 +345,9 @@ function Settings() {
                   }
                 />
 
-                <span>/100</span>
+                <span>
+                  /100
+                </span>
 
               </div>
 
@@ -289,7 +361,9 @@ function Settings() {
               </label>
 
               <select
-                value={settings.model_version}
+                value={
+                  settings.model_version
+                }
                 onChange={(e) =>
                   handleChange(
                     "model_version",
@@ -297,47 +371,86 @@ function Settings() {
                   )
                 }
               >
-                <option value="v2.4.1">
-                  v2.4.1
+
+                <option value="Financial Fraud Detection v1.0">
+                  Financial Fraud Detection v1.0
                 </option>
 
-                <option value="v2.4.0">
-                  v2.4.0
-                </option>
-
-                <option value="v2.3.8">
-                  v2.3.8
-                </option>
               </select>
 
             </div>
 
 
-            <SettingToggle
-              title="Automatic Investigation"
-              description="Automatically investigate critical transactions"
-              enabled={settings.auto_block_high_risk}
-              onClick={() =>
-                toggleSetting("auto_block_high_risk")
-              }
-            />
+            <div
+              className="setting-toggle-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "20px",
+              }}
+            >
+
+              <div
+                className="setting-toggle-text"
+                style={{
+                  flex: 1,
+                }}
+              >
+
+                <strong>
+                  Automatic Investigation
+                </strong>
+
+                <span>
+                  Critical transactions are automatically flagged when high-risk blocking is enabled
+                </span>
+
+              </div>
+
+              <div
+                style={{
+                  flexShrink: 0,
+                  padding: "7px 12px",
+                  borderRadius: "20px",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  background:
+                    settings.auto_block_high_risk
+                      ? "rgba(114,213,114,0.18)"
+                      : "rgba(255,255,255,0.08)",
+                  color:
+                    settings.auto_block_high_risk
+                      ? "#72d572"
+                      : "#888",
+                }}
+              >
+                {settings.auto_block_high_risk
+                  ? "ACTIVE"
+                  : "INACTIVE"}
+              </div>
+
+            </div>
 
           </div>
 
         </section>
 
 
-        {/* NOTIFICATIONS */}
         <section className="panel settings-card">
 
           <div className="settings-section-header">
+
             <div>
-              <h2>Notifications</h2>
+              <h2>
+                Notifications
+              </h2>
 
               <p>
                 Control security and system notifications
               </p>
             </div>
+
           </div>
 
 
@@ -345,19 +458,28 @@ function Settings() {
 
             <SettingToggle
               title="Security Notifications"
-              description="Receive important security events"
-              enabled={settings.notifications}
+              description="Receive important fraud and security events"
+              enabled={
+                settings.notifications
+              }
               onClick={() =>
-                toggleSetting("notifications")
+                toggleSetting(
+                  "notifications"
+                )
               }
             />
+
 
             <SettingToggle
               title="Real-time Monitoring"
               description="Receive updates while transactions are analyzed"
-              enabled={settings.real_time_monitoring}
+              enabled={
+                settings.real_time_monitoring
+              }
               onClick={() =>
-                toggleSetting("real_time_monitoring")
+                toggleSetting(
+                  "real_time_monitoring"
+                )
               }
             />
 
@@ -366,36 +488,83 @@ function Settings() {
         </section>
 
 
-        {/* SECURITY */}
         <section className="panel settings-card">
 
           <div className="settings-section-header">
+
             <div>
-              <h2>Security</h2>
+              <h2>
+                Security
+              </h2>
 
               <p>
-                Manage account security controls
+                Manage transaction security controls
               </p>
             </div>
+
           </div>
 
 
           <div className="settings-list">
 
-            <SettingToggle
-              title="Automatic High-Risk Blocking"
-              description="Block transactions that exceed the configured risk threshold"
-              enabled={settings.auto_block_high_risk}
-              onClick={() =>
-                toggleSetting("auto_block_high_risk")
-              }
-            />
+            <div
+              className="setting-toggle-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "20px",
+              }}
+            >
+
+              <div
+                className="setting-toggle-text"
+                style={{
+                  flex: 1,
+                }}
+              >
+
+                <strong>
+                  Automatic High-Risk Blocking
+                </strong>
+
+                <span>
+                  Current transaction blocking status
+                </span>
+
+              </div>
+
+              <div
+                style={{
+                  flexShrink: 0,
+                  padding: "7px 12px",
+                  borderRadius: "20px",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  background:
+                    settings.auto_block_high_risk
+                      ? "rgba(114,213,114,0.18)"
+                      : "rgba(255,255,255,0.08)",
+                  color:
+                    settings.auto_block_high_risk
+                      ? "#72d572"
+                      : "#888",
+                }}
+              >
+                {settings.auto_block_high_risk
+                  ? "ON"
+                  : "OFF"}
+              </div>
+
+            </div>
 
 
             <div className="security-action">
 
               <div>
-                <strong>Change Password</strong>
+                <strong>
+                  Change Password
+                </strong>
 
                 <span>
                   Update your account password
@@ -412,7 +581,9 @@ function Settings() {
             <div className="security-action">
 
               <div>
-                <strong>Login Activity</strong>
+                <strong>
+                  Login Activity
+                </strong>
 
                 <span>
                   Review recent account sessions
@@ -432,13 +603,14 @@ function Settings() {
       </div>
 
 
-      {/* APPEARANCE */}
       <section className="panel appearance-panel">
 
         <div className="settings-section-header">
 
           <div>
-            <h2>Appearance</h2>
+            <h2>
+              Appearance
+            </h2>
 
             <p>
               Customize your NEXRA workspace
@@ -469,7 +641,6 @@ function Settings() {
       </section>
 
 
-      {/* SAVE BAR */}
       <div className="settings-save-bar">
 
         <div>
@@ -493,7 +664,9 @@ function Settings() {
           onClick={handleSave}
           disabled={saving}
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {saving
+            ? "Saving..."
+            : "Save Changes"}
         </button>
 
       </div>
@@ -503,8 +676,6 @@ function Settings() {
 }
 
 
-/* TOGGLE COMPONENT */
-
 function SettingToggle({
   title,
   description,
@@ -512,9 +683,22 @@ function SettingToggle({
   onClick,
 }) {
   return (
-    <div className="setting-toggle-row">
+    <div
+      className="setting-toggle-row"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "20px",
+      }}
+    >
 
-      <div className="setting-toggle-text">
+      <div
+        className="setting-toggle-text"
+        style={{
+          flex: 1,
+        }}
+      >
 
         <strong>
           {title}
@@ -529,14 +713,41 @@ function SettingToggle({
 
       <button
         type="button"
-        className={`toggle ${
-          enabled ? "active" : ""
-        }`}
         onClick={onClick}
         aria-label={title}
+        aria-pressed={enabled}
+        style={{
+          flexShrink: 0,
+          width: "52px",
+          height: "28px",
+          padding: "3px",
+          borderRadius: "20px",
+          border:
+            "1px solid rgba(255,255,255,0.18)",
+          background: enabled
+            ? "#72d572"
+            : "#333",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: enabled
+            ? "flex-end"
+            : "flex-start",
+          transition: "all 0.2s ease",
+        }}
       >
 
-        <span></span>
+        <span
+          style={{
+            display: "block",
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            background: "#fff",
+            boxShadow:
+              "0 2px 6px rgba(0,0,0,0.35)",
+          }}
+        />
 
       </button>
 

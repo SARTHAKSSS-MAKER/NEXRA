@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from "react"
-import { getAlerts } from "../api"
+import { getAlerts, getEvaluation } from "../api"
 
 function Alerts() {
   const [alerts, setAlerts] = useState([])
+  const [evaluation, setEvaluation] = useState(null)
   const [filter, setFilter] = useState("All Alerts")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    getAlerts()
-      .then((data) => {
-        setAlerts(Array.isArray(data) ? data : [])
+    Promise.all([
+      getAlerts(),
+      getEvaluation(),
+    ])
+      .then(([alertsData, evaluationData]) => {
+        setAlerts(Array.isArray(alertsData) ? alertsData : [])
+        setEvaluation(evaluationData)
         setLoading(false)
       })
       .catch((error) => {
@@ -33,7 +38,7 @@ function Alerts() {
       description:
         alert.description ??
         alert.message ??
-        "Suspicious activity detected",
+        "Suspicious financial transaction detected",
 
       user:
         alert.user ??
@@ -72,7 +77,8 @@ function Alerts() {
     filter === "All Alerts"
       ? normalizedAlerts
       : normalizedAlerts.filter(
-          (alert) => alert.level.toLowerCase() === filter.toLowerCase()
+          (alert) =>
+            alert.level.toLowerCase() === filter.toLowerCase()
         )
 
   const activeAlerts = normalizedAlerts.filter(
@@ -95,6 +101,26 @@ function Alerts() {
     (alert) =>
       alert.status.toLowerCase() === "resolved"
   )
+
+  const modelRecall =
+    evaluation?.recall != null
+      ? (evaluation.recall * 100).toFixed(1)
+      : "0.0"
+
+  const modelPrecision =
+    evaluation?.precision != null
+      ? (evaluation.precision * 100).toFixed(1)
+      : "0.0"
+
+  const falsePositives =
+    evaluation?.false_positive ??
+    evaluation?.confusion_matrix?.[0]?.[1] ??
+    0
+
+  const falseNegatives =
+    evaluation?.false_negative ??
+    evaluation?.confusion_matrix?.[1]?.[0] ??
+    0
 
   if (loading) {
     return (
@@ -131,7 +157,6 @@ function Alerts() {
   return (
     <div className="page alerts-page">
 
-      {/* PAGE HEADING */}
       <div className="page-heading">
 
         <div>
@@ -144,12 +169,10 @@ function Alerts() {
           </h1>
 
           <p className="subtitle">
-            Review and investigate suspicious activity
+            Review and investigate suspicious financial activity
           </p>
         </div>
 
-
-        {/* FILTER */}
         <div className="alert-filter-wrapper">
 
           <button
@@ -181,11 +204,8 @@ function Alerts() {
 
       </div>
 
-
-      {/* ALERT SUMMARY */}
       <section className="alert-summary">
 
-        {/* ACTIVE */}
         <div className="alert-summary-card">
 
           <div className="summary-top">
@@ -206,8 +226,6 @@ function Alerts() {
 
         </div>
 
-
-        {/* CRITICAL */}
         <div className="alert-summary-card critical-card">
 
           <div className="summary-top">
@@ -228,8 +246,6 @@ function Alerts() {
 
         </div>
 
-
-        {/* INVESTIGATING */}
         <div className="alert-summary-card">
 
           <div className="summary-top">
@@ -250,8 +266,6 @@ function Alerts() {
 
         </div>
 
-
-        {/* RESOLVED */}
         <div className="alert-summary-card safe-card">
 
           <div className="summary-top">
@@ -274,8 +288,116 @@ function Alerts() {
 
       </section>
 
+      <section
+        className="panel"
+        style={{
+          marginBottom: "20px",
+        }}
+      >
 
-      {/* ALERT LIST */}
+        <div
+          className="panel-header"
+          style={{
+            alignItems: "center",
+          }}
+        >
+
+          <div>
+            <h2>
+              Fraud Detection Performance
+            </h2>
+
+            <p>
+              Current held-out evaluation of the financial transaction model
+            </p>
+          </div>
+
+          <span
+            style={{
+              fontSize: "12px",
+              opacity: 0.6,
+            }}
+          >
+            {evaluation?.test_samples?.toLocaleString() || 0} test samples
+          </span>
+
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "12px",
+            padding: "0 20px 20px",
+          }}
+        >
+
+          <div>
+            <small style={{ opacity: 0.6 }}>
+              Accuracy
+            </small>
+
+            <strong
+              style={{
+                display: "block",
+                marginTop: "5px",
+              }}
+            >
+              {evaluation
+                ? `${(evaluation.accuracy * 100).toFixed(1)}%`
+                : "—"}
+            </strong>
+          </div>
+
+          <div>
+            <small style={{ opacity: 0.6 }}>
+              Precision
+            </small>
+
+            <strong
+              style={{
+                display: "block",
+                marginTop: "5px",
+              }}
+            >
+              {modelPrecision}%
+            </strong>
+          </div>
+
+          <div>
+            <small style={{ opacity: 0.6 }}>
+              Fraud Recall
+            </small>
+
+            <strong
+              style={{
+                display: "block",
+                marginTop: "5px",
+              }}
+            >
+              {modelRecall}%
+            </strong>
+          </div>
+
+          <div>
+            <small style={{ opacity: 0.6 }}>
+              False Negatives
+            </small>
+
+            <strong
+              style={{
+                display: "block",
+                marginTop: "5px",
+              }}
+            >
+              {falseNegatives}
+            </strong>
+          </div>
+
+        </div>
+
+      </section>
+
       <section className="panel alerts-panel">
 
         <div className="panel-header alerts-panel-header">
@@ -296,8 +418,6 @@ function Alerts() {
 
         </div>
 
-
-        {/* TABLE HEADER */}
         <div className="alerts-table-head">
 
           <span>
@@ -330,8 +450,6 @@ function Alerts() {
 
         </div>
 
-
-        {/* ALERT ROWS */}
         <div className="alerts-list">
 
           {filteredAlerts.length === 0 ? (
@@ -367,7 +485,6 @@ function Alerts() {
                   key={alert.id}
                 >
 
-                  {/* ALERT */}
                   <div className="alert-main">
 
                     <div
@@ -390,20 +507,14 @@ function Alerts() {
 
                   </div>
 
-
-                  {/* USER */}
                   <span className="alert-user">
                     {alert.user}
                   </span>
 
-
-                  {/* AMOUNT */}
                   <strong className="alert-amount">
                     {alert.amount}
                   </strong>
 
-
-                  {/* RISK */}
                   <div className="alert-risk">
 
                     <div className="alert-risk-bar">
@@ -425,24 +536,18 @@ function Alerts() {
 
                   </div>
 
-
-                  {/* LEVEL */}
                   <span
                     className={`alert-level ${levelClass}`}
                   >
                     {alert.level}
                   </span>
 
-
-                  {/* STATUS */}
                   <span
                     className={`alert-status ${statusClass}`}
                   >
                     {alert.status}
                   </span>
 
-
-                  {/* TIME */}
                   <span className="alert-time">
                     {alert.time}
                   </span>

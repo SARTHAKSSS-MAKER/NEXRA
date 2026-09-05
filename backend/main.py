@@ -3,21 +3,20 @@ from datetime import datetime, date
 import joblib
 import numpy as np
 import pandas as pd
+
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
 from pydantic import BaseModel, Field, ConfigDict
-from sqlalchemy import Column,Integer,Boolean,Float,DateTime
+
+from sqlalchemy import Column, Integer, Boolean, Float, DateTime
 from sqlalchemy.orm import Session
 
 from database import engine, SessionLocal
 from models import Base, Transaction
 
-# =========================================================
-# PREDICTION LOG
-# =========================================================
 
 class PredictionLog(Base):
-
     __tablename__ = "prediction_logs"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -39,22 +38,15 @@ class PredictionLog(Base):
     )
 
 
-# =========================================================
-# DATABASE
-# =========================================================
-
 Base.metadata.create_all(bind=engine)
 
-
-# =========================================================
-# FASTAPI
-# =========================================================
 
 app = FastAPI(
     title="NEXRA API",
     description="NEXRA Fraud Detection and Transaction Risk API",
     version="1.0.0"
 )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,10 +60,6 @@ app.add_middleware(
 )
 
 
-# =========================================================
-# DATABASE SESSION
-# =========================================================
-
 def get_db():
     db = SessionLocal()
 
@@ -81,27 +69,46 @@ def get_db():
         db.close()
 
 
-# =========================================================
-# ML MODEL
-# =========================================================
-
 BASE_DIR = Path(__file__).resolve().parents[1]
 
-MODEL_PATH = BASE_DIR / "ml" / "models" / "fraud_detection_model.pkl"
-SCALER_PATH = BASE_DIR / "ml" / "models" / "scaler.pkl"
-DATASET_PATH = BASE_DIR / "ml" / "datasets" / "creditcard.csv"
-TEST_DATA_PATH = BASE_DIR / "ml" / "models" / "test_data.pkl"
+MODEL_PATH = (
+    BASE_DIR
+    / "ml"
+    / "models"
+    / "fraud_detection_model.pkl"
+)
+
+SCALER_PATH = (
+    BASE_DIR
+    / "ml"
+    / "models"
+    / "scaler.pkl"
+)
+
+DATASET_PATH = (
+    BASE_DIR
+    / "ml"
+    / "datasets"
+    / "creditcard.csv"
+)
+
+TEST_DATA_PATH = (
+    BASE_DIR
+    / "ml"
+    / "models"
+    / "test_data.pkl"
+)
+
+
+fraud_model = None
+scaler = None
 
 
 print("\n" + "=" * 60)
 print("NEXRA ML SYSTEM")
 print("=" * 60)
 
-fraud_model = None
-scaler = None
-
 try:
-
     print("Loading fraud detection model...")
     print("Model path:", MODEL_PATH)
 
@@ -117,14 +124,18 @@ try:
     print("Scaler loaded successfully!")
 
 except Exception as e:
-
     print("WARNING: ML model could not be loaded.")
     print("Error:", e)
 
 
-# =========================================================
-# REQUEST SCHEMA
-# =========================================================
+settings_store = {
+    "notifications": True,
+    "real_time_monitoring": True,
+    "auto_block_high_risk": False,
+    "risk_threshold": 80,
+    "model_version": "Financial Fraud Detection v1.0"
+}
+
 
 class PredictionRequest(BaseModel):
 
@@ -171,16 +182,9 @@ class PredictionRequest(BaseModel):
         ...,
         min_length=30,
         max_length=30,
-        description=(
-            "Exactly 30 numerical features: "
-            "Time + V1-V28 + Amount"
-        )
+        description="Exactly 30 numerical features: Time + V1-V28 + Amount"
     )
 
-
-# =========================================================
-# RESPONSE SCHEMA
-# =========================================================
 
 class PredictionResponse(BaseModel):
 
@@ -197,9 +201,14 @@ class PredictionResponse(BaseModel):
     status: str
 
 
-# =========================================================
-# ROOT
-# =========================================================
+class SettingsUpdate(BaseModel):
+
+    notifications: bool
+    real_time_monitoring: bool
+    auto_block_high_risk: bool
+    risk_threshold: int
+    model_version: str
+
 
 @app.get("/")
 def root():
@@ -207,13 +216,10 @@ def root():
     return {
         "message": "NEXRA API is running",
         "ml_model": fraud_model is not None,
-        "scaler": scaler is not None
+        "scaler": scaler is not None,
+        "settings": settings_store
     }
 
-
-# =========================================================
-# HEALTH
-# =========================================================
 
 @app.get("/api/health")
 def health():
@@ -224,10 +230,6 @@ def health():
         "scaler": scaler is not None
     }
 
-
-# =========================================================
-# ML STATUS
-# =========================================================
 
 @app.get("/api/ml/status")
 def ml_status():
@@ -245,8 +247,10 @@ def ml_status():
         "status": "ready" if ready else "not_ready"
     }
 
+
 @app.get("/api/test-transactions")
 def get_test_transactions():
+
     if not DATASET_PATH.exists():
         raise HTTPException(
             status_code=404,
@@ -261,7 +265,10 @@ def get_test_transactions():
         "Amount"
     ]
 
-    required_columns = [*feature_columns, "Class"]
+    required_columns = [
+        *feature_columns,
+        "Class"
+    ]
 
     missing_columns = [
         column
@@ -276,6 +283,7 @@ def get_test_transactions():
         )
 
     legitimate = df[df["Class"] == 0].head(5)
+
     fraud = df[df["Class"] == 1].head(5)
 
     selected = pd.concat(
@@ -286,14 +294,20 @@ def get_test_transactions():
     transactions = []
 
     for index, row in selected.iterrows():
+
         transactions.append({
             "id": f"TEST-{index + 1:04d}",
-            "actual_class": int(row["Class"]),
+
+            "actual_class": int(
+                row["Class"]
+            ),
+
             "actual_label": (
                 "Fraud"
                 if int(row["Class"]) == 1
                 else "Legitimate"
             ),
+
             "features": [
                 float(row[column])
                 for column in feature_columns
@@ -304,8 +318,11 @@ def get_test_transactions():
         "count": len(transactions),
         "transactions": transactions
     }
+
+
 @app.get("/api/evaluate")
 def evaluate_model():
+
     if not MODEL_PATH.exists():
         raise HTTPException(
             status_code=404,
@@ -329,12 +346,23 @@ def evaluate_model():
     X_test = test_data["X_test"]
     y_test = test_data["y_test"]
 
-    evaluation_model = joblib.load(MODEL_PATH)
-    evaluation_scaler = joblib.load(SCALER_PATH)
+    evaluation_model = joblib.load(
+        MODEL_PATH
+    )
 
-    X_test_scaled = evaluation_scaler.transform(X_test)
+    evaluation_scaler = joblib.load(
+        SCALER_PATH
+    )
 
-    y_pred = evaluation_model.predict(X_test_scaled)
+    X_test_scaled = (
+        evaluation_scaler.transform(X_test)
+    )
+
+    y_pred = (
+        evaluation_model.predict(
+            X_test_scaled
+        )
+    )
 
     from sklearn.metrics import (
         accuracy_score,
@@ -374,38 +402,59 @@ def evaluate_model():
 
     return {
         "dataset": "Credit Card Fraud Detection",
-        "test_samples": int(len(y_test)),
-        "accuracy": round(float(accuracy), 4),
-        "precision": round(float(precision), 4),
-        "recall": round(float(recall), 4),
-        "f1_score": round(float(f1), 4),
+
+        "test_samples": int(
+            len(y_test)
+        ),
+
+        "accuracy": round(
+            float(accuracy),
+            4
+        ),
+
+        "precision": round(
+            float(precision),
+            4
+        ),
+
+        "recall": round(
+            float(recall),
+            4
+        ),
+
+        "f1_score": round(
+            float(f1),
+            4
+        ),
+
         "confusion_matrix": cm.tolist(),
-        "true_negative": int(cm[0][0]),
-        "false_positive": int(cm[0][1]),
-        "false_negative": int(cm[1][0]),
-        "true_positive": int(cm[1][1])
+
+        "true_negative": int(
+            cm[0][0]
+        ),
+
+        "false_positive": int(
+            cm[0][1]
+        ),
+
+        "false_negative": int(
+            cm[1][0]
+        ),
+
+        "true_positive": int(
+            cm[1][1]
+        )
     }
-# =========================================================
-# FRAUD PREDICTION
-# =========================================================
+
 
 @app.post(
     "/api/predict",
-    response_model=PredictionResponse,
-    summary="Predict transaction fraud",
-    description=(
-        "Analyzes a transaction using the trained "
-        "Logistic Regression fraud detection model."
-    )
+    response_model=PredictionResponse
 )
 def predict_fraud(
     request: PredictionRequest,
     db: Session = Depends(get_db)
 ):
-
-    # -----------------------------------------------------
-    # CHECK ML SYSTEM
-    # -----------------------------------------------------
 
     if fraud_model is None or scaler is None:
 
@@ -413,10 +462,6 @@ def predict_fraud(
             status_code=503,
             detail="Fraud detection model is not loaded."
         )
-
-    # -----------------------------------------------------
-    # CONVERT INPUT
-    # -----------------------------------------------------
 
     try:
 
@@ -432,10 +477,6 @@ def predict_fraud(
             detail="Invalid feature values."
         )
 
-    # -----------------------------------------------------
-    # VERIFY FEATURE COUNT
-    # -----------------------------------------------------
-
     if features.shape[1] != 30:
 
         raise HTTPException(
@@ -446,53 +487,47 @@ def predict_fraud(
             )
         )
 
-    # -----------------------------------------------------
-    # CHECK SCALER
-    # -----------------------------------------------------
-
     scaler_features = getattr(
         scaler,
         "n_features_in_",
         None
     )
 
-    if scaler_features is not None:
+    if (
+        scaler_features is not None
+        and scaler_features != 30
+    ):
 
-        if scaler_features != 30:
-
-            raise HTTPException(
-                status_code=500,
-                detail=(
-                    f"Scaler expects {scaler_features} features, "
-                    "but the API requires 30. "
-                    "Retrain/save the scaler using the "
-                    "same feature pipeline as the model."
-                )
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"Scaler expects {scaler_features} features, "
+                "but the API requires 30."
             )
-
-    # -----------------------------------------------------
-    # MODEL PREDICTION
-    # -----------------------------------------------------
+        )
 
     try:
 
-        # Scale input using the SAME scaler used during training
-        scaled_features = scaler.transform(features)
-
-        # Generate prediction
-        prediction = int(
-            fraud_model.predict(scaled_features)[0]
+        scaled_features = (
+            scaler.transform(features)
         )
 
-        # -------------------------------------------------
-        # FRAUD PROBABILITY
-        # -------------------------------------------------
-
-        if hasattr(fraud_model, "predict_proba"):
-
-            probabilities = fraud_model.predict_proba(
+        prediction = int(
+            fraud_model.predict(
                 scaled_features
             )[0]
+        )
+
+        if hasattr(
+            fraud_model,
+            "predict_proba"
+        ):
+
+            probabilities = (
+                fraud_model.predict_proba(
+                    scaled_features
+                )[0]
+            )
 
             fraud_probability = float(
                 probabilities[1]
@@ -500,25 +535,39 @@ def predict_fraud(
 
         else:
 
-            fraud_probability = float(prediction)
-
-        # -------------------------------------------------
-        # RISK SCORE
-        # -------------------------------------------------
+            fraud_probability = float(
+                prediction
+            )
 
         risk_score = round(
             fraud_probability * 100,
             2
         )
 
-        # -------------------------------------------------
-        # RISK LEVEL
-        # -------------------------------------------------
+        threshold = int(
+            settings_store[
+                "risk_threshold"
+            ]
+        )
 
-        if risk_score >= 80:
+        auto_block = bool(
+            settings_store[
+                "auto_block_high_risk"
+            ]
+        )
+
+        if (
+            auto_block
+            and risk_score >= threshold
+        ):
 
             risk_level = "Critical"
             status = "Blocked"
+
+        elif risk_score >= 80:
+
+            risk_level = "Critical"
+            status = "Review"
 
         elif risk_score >= 50:
 
@@ -535,22 +584,30 @@ def predict_fraud(
             risk_level = "Low"
             status = "Approved"
 
-
-            # -------------------------------------------------
-        # SAVE PREDICTION
-        # -------------------------------------------------
-
         prediction_log = PredictionLog(
             fraud=prediction == 1,
             risk_score=risk_score
         )
 
         db.add(prediction_log)
-        db.commit()
 
-        # -------------------------------------------------
-        # FINAL RESULT
-        # -------------------------------------------------
+        db.flush()
+
+        transaction_amount = float(
+            request.features[-1]
+        )
+
+        transaction = Transaction(
+            transaction_id=f"TXN-AI-{prediction_log.id:04d}",
+            amount=transaction_amount,
+            location="Dataset Test",
+            risk_score=risk_score,
+            status=status
+        )
+
+        db.add(transaction)
+
+        db.commit()
 
         return PredictionResponse(
 
@@ -588,29 +645,29 @@ def predict_fraud(
 
     except Exception as e:
 
+        db.rollback()
+
         raise HTTPException(
             status_code=500,
             detail=f"Prediction failed: {str(e)}"
         )
 
 
-# =========================================================
-# TRANSACTIONS
-# =========================================================
-
 @app.get("/api/transactions")
 def get_transactions(
     db: Session = Depends(get_db)
 ):
 
-    transactions = db.query(
-        Transaction
-    ).all()
+    transactions = (
+        db.query(Transaction)
+        .order_by(Transaction.id.desc())
+        .limit(10)
+        .all()
+    )
 
     if not transactions:
 
         transactions = [
-
             Transaction(
                 transaction_id="TXN-98241",
                 amount=84500,
@@ -618,7 +675,6 @@ def get_transactions(
                 risk_score=82,
                 status="Blocked"
             ),
-
             Transaction(
                 transaction_id="TXN-98240",
                 amount=12800,
@@ -626,7 +682,6 @@ def get_transactions(
                 risk_score=61,
                 status="Review"
             ),
-
             Transaction(
                 transaction_id="TXN-98239",
                 amount=3250,
@@ -634,7 +689,6 @@ def get_transactions(
                 risk_score=24,
                 status="Approved"
             ),
-
             Transaction(
                 transaction_id="TXN-98238",
                 amount=7900,
@@ -645,28 +699,36 @@ def get_transactions(
         ]
 
         db.add_all(transactions)
+
         db.commit()
 
         for transaction in transactions:
             db.refresh(transaction)
 
-    return [
+    response = []
 
-        {
+    for transaction in transactions:
+
+        if transaction.risk_score >= 80:
+            risk_level = "Critical"
+        elif transaction.risk_score >= 50:
+            risk_level = "High"
+        elif transaction.risk_score >= 25:
+            risk_level = "Medium"
+        else:
+            risk_level = "Low"
+
+        response.append({
             "id": transaction.transaction_id,
             "amount": transaction.amount,
             "location": transaction.location,
             "risk_score": transaction.risk_score,
+            "risk_level": risk_level,
             "status": transaction.status
-        }
+        })
 
-        for transaction in transactions
-    ]
+    return response
 
-
-# =========================================================
-# ALERTS
-# =========================================================
 
 @app.get("/api/alerts")
 def get_alerts():
@@ -702,10 +764,6 @@ def get_alerts():
     ]
 
 
-# =========================================================
-# MODELS
-# =========================================================
-
 @app.get("/api/models")
 def get_models(
     db: Session = Depends(get_db)
@@ -723,15 +781,19 @@ def get_models(
     ).count()
 
     return {
-        "predictions_today": predictions_today,
+
+        "predictions_today":
+            predictions_today,
 
         "models": [
 
             {
                 "id": "MOD-001",
                 "name": "Fraud Detection Model",
-                "version": "v2.4.1",
-                "accuracy": 96.8,
+                "version": settings_store[
+                    "model_version"
+                ],
+                "accuracy": 93.73,
                 "status": "Production"
             },
 
@@ -750,13 +812,9 @@ def get_models(
                 "accuracy": 92.7,
                 "status": "Monitoring"
             }
-
         ]
     }
 
-# =========================================================
-# REPORTS
-# =========================================================
 
 @app.get("/api/reports")
 def get_reports():
@@ -789,10 +847,6 @@ def get_reports():
     ]
 
 
-# =========================================================
-# RISK
-# =========================================================
-
 @app.get("/api/risk")
 def get_risk():
 
@@ -806,51 +860,23 @@ def get_risk():
     }
 
 
-# =========================================================
-# DASHBOARD
-# =========================================================
-
 @app.get("/api/dashboard")
 def get_dashboard():
 
     return {
         "total_transactions": 42900,
         "high_risk_transactions": 6284,
-        "detection_accuracy": 96.8,
+        "detection_accuracy": 93.73,
         "active_alerts": 24,
         "fraud_rate": 3.8,
         "blocked_transactions": 1842
     }
 
 
-# =========================================================
-# SETTINGS
-# =========================================================
-
-class SettingsUpdate(BaseModel):
-
-    notifications: bool
-    real_time_monitoring: bool
-    auto_block_high_risk: bool
-    risk_threshold: int
-    model_version: str
-
-
 @app.get("/api/settings")
 def get_settings():
 
-    return {
-
-        "notifications": True,
-
-        "real_time_monitoring": True,
-
-        "auto_block_high_risk": False,
-
-        "risk_threshold": 80,
-
-        "model_version": "v2.4.1"
-    }
+    return settings_store.copy()
 
 
 @app.put("/api/settings")
@@ -858,9 +884,64 @@ def update_settings(
     settings: SettingsUpdate
 ):
 
+    risk_threshold = min(
+        max(
+            int(settings.risk_threshold),
+            0
+        ),
+        100
+    )
+
+    settings_store[
+        "notifications"
+    ] = bool(
+        settings.notifications
+    )
+
+    settings_store[
+        "real_time_monitoring"
+    ] = bool(
+        settings.real_time_monitoring
+    )
+
+    settings_store[
+        "auto_block_high_risk"
+    ] = bool(
+        settings.auto_block_high_risk
+    )
+
+    settings_store[
+        "risk_threshold"
+    ] = risk_threshold
+
+    settings_store[
+        "model_version"
+    ] = settings.model_version
+
+    print("\nNEXRA SETTINGS UPDATED")
+
+    print(
+        "Auto Block:",
+        settings_store[
+            "auto_block_high_risk"
+        ]
+    )
+
+    print(
+        "Risk Threshold:",
+        settings_store[
+            "risk_threshold"
+        ]
+    )
+
+    print(
+        "Model Version:",
+        settings_store[
+            "model_version"
+        ]
+    )
+
     return {
-
         "message": "Settings updated successfully",
-
-        "settings": settings.model_dump()
+        "settings": settings_store.copy()
     }

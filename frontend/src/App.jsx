@@ -9,13 +9,6 @@ import Models from "./pages/Models"
 import Reports from "./pages/Reports"
 import Settings from "./pages/Settings"
 
-import EcommerceDashboard from "./pages/ecommerce/EcommerceDashboard"
-import EcommerceAnalysis from "./pages/ecommerce/EcommerceAnalysis"
-import EcommerceAlerts from "./pages/ecommerce/EcommerceAlerts"
-import EcommerceModel from "./pages/ecommerce/EcommerceModel"
-import EcommerceReports from "./pages/ecommerce/EcommerceReports"
-
-
 const financialNav = [
   { icon: "▦", label: "Dashboard" },
   { icon: "◈", label: "Risk Monitor" },
@@ -26,60 +19,11 @@ const financialNav = [
   { icon: "⚙", label: "Settings" }
 ]
 
-const ecommerceNav = [
-  { icon: "▦", label: "Dashboard" },
-  { icon: "🛒", label: "Transaction Analysis" },
-  { icon: "♢", label: "Alerts" },
-  { icon: "◫", label: "Model" },
-  { icon: "▤", label: "Reports" }
-]
-
-
 function App() {
-
   const [activePage, setActivePage] = useState("Dashboard")
-  const [activeSystem, setActiveSystem] = useState("financial")
-
-
-  const openFinancialPage = (page) => {
-    setActiveSystem("financial")
-    setActivePage(page)
-  }
-
-
-  const openEcommercePage = (page) => {
-    setActiveSystem("ecommerce")
-    setActivePage(page)
-  }
-
 
   const renderPage = () => {
-
-    if (activeSystem === "ecommerce") {
-
-      switch (activePage) {
-
-        case "Transaction Analysis":
-          return <EcommerceAnalysis />
-
-        case "Alerts":
-          return <EcommerceAlerts />
-
-        case "Model":
-          return <EcommerceModel />
-
-        case "Reports":
-          return <EcommerceReports />
-
-        default:
-          return <EcommerceDashboard />
-      }
-
-    }
-
-
     switch (activePage) {
-
       case "Risk Monitor":
         return <RiskMonitor />
 
@@ -99,20 +43,22 @@ function App() {
         return <Settings />
 
       default:
-        return <Dashboard />
+        return (
+          <Dashboard
+            onNavigate={setActivePage}
+          />
+        )
     }
   }
 
-
   return (
     <div className="app">
-
-      {/* ================= TOP BAR ================= */}
 
       <header className="topbar">
 
         <div className="top-search">
           <span>⌕</span>
+
           <input
             type="text"
             placeholder="Search anything..."
@@ -134,8 +80,6 @@ function App() {
       </header>
 
 
-      {/* ================= LEFT SIDEBAR ================= */}
-
       <aside className="financial-sidebar">
 
         <div className="sidebar-brand">
@@ -153,6 +97,7 @@ function App() {
           FINANCIAL FRAUD
         </div>
 
+
         <div className="model-status financial-status">
           <span></span>
           Model 1 Active
@@ -166,12 +111,11 @@ function App() {
             <button
               key={item.label}
               className={
-                activeSystem === "financial" &&
                 activePage === item.label
                   ? "model-nav-item active"
                   : "model-nav-item"
               }
-              onClick={() => openFinancialPage(item.label)}
+              onClick={() => setActivePage(item.label)}
             >
 
               <span className="nav-icon">
@@ -205,70 +149,14 @@ function App() {
       </aside>
 
 
-      {/* ================= CENTER ================= */}
-
       <main className="center-content">
 
         <div className="center-page">
-
           {renderPage()}
-
         </div>
 
       </main>
 
-
-      {/* ================= RIGHT SIDEBAR ================= */}
-
-      <aside className="ecommerce-sidebar">
-
-        <div className="ecommerce-header">
-
-          <div className="system-title">
-            E-COMMERCE FRAUD
-          </div>
-
-          <div className="model-status ecommerce-status">
-            <span></span>
-            Model 2 Active
-          </div>
-
-        </div>
-
-
-        <nav className="model-nav ecommerce-nav">
-
-          {ecommerceNav.map((item) => (
-
-            <button
-              key={item.label}
-              className={
-                activeSystem === "ecommerce" &&
-                activePage === item.label
-                  ? "model-nav-item active"
-                  : "model-nav-item"
-              }
-              onClick={() => openEcommercePage(item.label)}
-            >
-
-              <span className="nav-icon">
-                {item.icon}
-              </span>
-
-              <span>
-                {item.label}
-              </span>
-
-            </button>
-
-          ))}
-
-        </nav>
-
-      </aside>
-
-
-      {/* ================= FOOTER ================= */}
 
       <footer className="app-footer">
 

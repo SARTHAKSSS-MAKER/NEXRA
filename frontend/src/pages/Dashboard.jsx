@@ -4,43 +4,58 @@ import {
   getTransactions,
   getAlerts,
   getRisk,
+  getEvaluation,
 } from "../api"
 
-function Dashboard() {
+function Dashboard({ onNavigate}) {
   const [dashboard, setDashboard] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [alerts, setAlerts] = useState([])
   const [risk, setRisk] = useState(null)
+  const [evaluation, setEvaluation] = useState(null)
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    Promise.all([
-      getDashboard(),
-      getTransactions(),
-      getAlerts(),
-      getRisk(),
-    ])
-      .then(
-        ([
+    const loadDashboard = async () => {
+      try {
+        const [
           dashboardData,
           transactionsData,
           alertsData,
           riskData,
-        ]) => {
-          setDashboard(dashboardData)
-          setTransactions(transactionsData)
-          setAlerts(alertsData)
-          setRisk(riskData)
-          setLoading(false)
-        }
-      )
-      .catch((error) => {
+          evaluationData,
+        ] = await Promise.all([
+          getDashboard(),
+          getTransactions(),
+          getAlerts(),
+          getRisk(),
+          getEvaluation(),
+        ])
+
+        setDashboard(dashboardData)
+        setTransactions(
+          Array.isArray(transactionsData)
+            ? transactionsData
+            : []
+        )
+        setAlerts(
+          Array.isArray(alertsData)
+            ? alertsData
+            : []
+        )
+        setRisk(riskData)
+        setEvaluation(evaluationData)
+      } catch (error) {
         console.error("Dashboard API error:", error)
         setError("Unable to connect to NEXRA backend")
+      } finally {
         setLoading(false)
-      })
+      }
+    }
+
+    loadDashboard()
   }, [])
 
   if (loading) {
@@ -82,17 +97,29 @@ function Dashboard() {
 
   const highRiskPercentage =
     totalRisk > 0
-      ? ((Number(risk?.high_risk || 0) / totalRisk) * 100).toFixed(1)
+      ? (
+          (Number(risk?.high_risk || 0) /
+            totalRisk) *
+          100
+        ).toFixed(1)
       : "0.0"
 
   const mediumRiskPercentage =
     totalRisk > 0
-      ? ((Number(risk?.medium_risk || 0) / totalRisk) * 100).toFixed(1)
+      ? (
+          (Number(risk?.medium_risk || 0) /
+            totalRisk) *
+          100
+        ).toFixed(1)
       : "0.0"
 
   const lowRiskPercentage =
     totalRisk > 0
-      ? ((Number(risk?.low_risk || 0) / totalRisk) * 100).toFixed(1)
+      ? (
+          (Number(risk?.low_risk || 0) /
+            totalRisk) *
+          100
+        ).toFixed(1)
       : "0.0"
 
   const highPriorityAlerts = alerts.filter(
@@ -101,139 +128,223 @@ function Dashboard() {
       alert.severity === "High"
   ).length
 
+  const realAccuracy =
+    evaluation?.accuracy != null
+      ? (Number(evaluation.accuracy) * 100).toFixed(1)
+      : Number(
+          dashboard?.detection_accuracy || 0
+        ).toFixed(1)
+
+  const realRecall =
+    evaluation?.recall != null
+      ? (Number(evaluation.recall) * 100).toFixed(1)
+      : null
+
   return (
     <div className="dashboard-page">
 
-      {/* PAGE HEADER */}
       <div className="page-heading dashboard-heading">
-        <div>
-          <p className="eyebrow">SECURITY OVERVIEW</p>
 
-          <h1>Dashboard</h1>
+        <div>
+
+          <p className="eyebrow">
+            SECURITY OVERVIEW
+          </p>
+
+          <h1>
+            Dashboard
+          </h1>
 
           <p className="subtitle">
             Real-time fraud intelligence and transaction risk overview
           </p>
+
         </div>
 
         <div className="dashboard-status">
+
           <span className="live-dot"></span>
+
           System Live
+
         </div>
+
       </div>
 
 
-      {/* TOP STAT CARDS */}
       <section className="dashboard-stats">
 
-        {/* TOTAL TRANSACTIONS */}
         <div className="dashboard-stat-card">
+
           <div className="stat-top">
-            <span>Total Transactions</span>
-            <div className="stat-icon">↗</div>
+
+            <span>
+              Total Transactions
+            </span>
+
+            <div className="stat-icon">
+              ↗
+            </div>
+
           </div>
 
           <strong>
             {Number(
-              dashboard.total_transactions
+              dashboard?.total_transactions || 0
             ).toLocaleString("en-IN")}
           </strong>
 
           <div className="stat-bottom positive">
+
             ↑ 12.8%
-            <span>vs last month</span>
+
+            <span>
+              vs last month
+            </span>
+
           </div>
+
         </div>
 
 
-        {/* HIGH RISK */}
         <div className="dashboard-stat-card">
+
           <div className="stat-top">
-            <span>High Risk Transactions</span>
-            <div className="stat-icon danger">!</div>
+
+            <span>
+              High Risk Transactions
+            </span>
+
+            <div className="stat-icon danger">
+              !
+            </div>
+
           </div>
 
           <strong>
             {Number(
-              dashboard.high_risk_transactions
+              dashboard?.high_risk_transactions || 0
             ).toLocaleString("en-IN")}
           </strong>
 
           <div className="stat-bottom danger-text">
+
             ↑ 4.7%
-            <span>requires attention</span>
+
+            <span>
+              requires attention
+            </span>
+
           </div>
+
         </div>
 
 
-        {/* ACCURACY */}
         <div className="dashboard-stat-card">
+
           <div className="stat-top">
-            <span>Detection Accuracy</span>
-            <div className="stat-icon">◈</div>
+
+            <span>
+              Detection Accuracy
+            </span>
+
+            <div className="stat-icon">
+              ◈
+            </div>
+
           </div>
 
           <strong>
-            {dashboard.detection_accuracy}%
+            {realAccuracy}%
           </strong>
 
           <div className="stat-bottom positive">
-            ↑ 2.1%
-            <span>from last month</span>
+
+            Real held-out evaluation
+
+            <span>
+              {realRecall !== null
+                ? `Recall ${realRecall}%`
+                : "Model performance"}
+            </span>
+
           </div>
+
         </div>
 
 
-        {/* ACTIVE ALERTS */}
         <div className="dashboard-stat-card">
+
           <div className="stat-top">
-            <span>Active Alerts</span>
-            <div className="stat-icon warning">!</div>
+
+            <span>
+              Active Alerts
+            </span>
+
+            <div className="stat-icon warning">
+              !
+            </div>
+
           </div>
 
           <strong>
-            {dashboard.active_alerts}
+            {dashboard?.active_alerts ?? alerts.length}
           </strong>
 
           <div className="stat-bottom warning-text">
+
             {highPriorityAlerts} high priority
-            <span>currently active</span>
+
+            <span>
+              currently active
+            </span>
+
           </div>
+
         </div>
 
       </section>
 
 
-      {/* MAIN ANALYTICS GRID */}
       <section className="dashboard-main-grid">
 
-        {/* TRANSACTION ACTIVITY */}
         <div className="panel dashboard-chart-panel">
 
           <div className="panel-header">
+
             <div>
-              <h2>Transaction Activity</h2>
+
+              <h2>
+                Transaction Activity
+              </h2>
 
               <p>
                 Transaction volume over the selected period
               </p>
+
             </div>
 
-            <button className="dashboard-filter">
+            <button
+              type="button"
+              className="dashboard-filter"
+            >
               Last 30 Days <span>⌄</span>
             </button>
+
           </div>
 
 
           <div className="activity-chart">
 
             <div className="chart-y-axis">
+
               <span>5K</span>
               <span>4K</span>
               <span>3K</span>
               <span>2K</span>
               <span>1K</span>
               <span>0</span>
+
             </div>
 
 
@@ -253,6 +364,7 @@ function Dashboard() {
               >
 
                 <defs>
+
                   <linearGradient
                     id="activityGradient"
                     x1="0"
@@ -260,6 +372,7 @@ function Dashboard() {
                     x2="0"
                     y2="1"
                   >
+
                     <stop
                       offset="0%"
                       stopOpacity="0.25"
@@ -269,7 +382,9 @@ function Dashboard() {
                       offset="100%"
                       stopOpacity="0"
                     />
+
                   </linearGradient>
+
                 </defs>
 
 
@@ -315,11 +430,13 @@ function Dashboard() {
 
 
               <div className="chart-x-axis">
+
                 <span>Aug 01</span>
                 <span>Aug 07</span>
                 <span>Aug 14</span>
                 <span>Aug 21</span>
                 <span>Aug 28</span>
+
               </div>
 
             </div>
@@ -329,17 +446,22 @@ function Dashboard() {
         </div>
 
 
-        {/* RISK DISTRIBUTION */}
         <div className="panel dashboard-risk-panel">
 
           <div className="panel-header">
+
             <div>
-              <h2>Risk Distribution</h2>
+
+              <h2>
+                Risk Distribution
+              </h2>
 
               <p>
                 Current transaction risk levels
               </p>
+
             </div>
+
           </div>
 
 
@@ -353,7 +475,9 @@ function Dashboard() {
                   {totalRisk.toLocaleString("en-IN")}
                 </strong>
 
-                <span>Total</span>
+                <span>
+                  Total
+                </span>
 
               </div>
 
@@ -365,38 +489,53 @@ function Dashboard() {
           <div className="dashboard-risk-legend">
 
             <div>
+
               <span>
+
                 <i className="risk-dot high"></i>
+
                 High Risk
+
               </span>
 
               <strong>
                 {highRiskPercentage}%
               </strong>
+
             </div>
 
 
             <div>
+
               <span>
+
                 <i className="risk-dot medium"></i>
+
                 Medium Risk
+
               </span>
 
               <strong>
                 {mediumRiskPercentage}%
               </strong>
+
             </div>
 
 
             <div>
+
               <span>
+
                 <i className="risk-dot low"></i>
+
                 Low Risk
+
               </span>
 
               <strong>
                 {lowRiskPercentage}%
               </strong>
+
             </div>
 
           </div>
@@ -406,25 +545,30 @@ function Dashboard() {
       </section>
 
 
-      {/* BOTTOM GRID */}
       <section className="dashboard-bottom-grid">
 
-        {/* RECENT TRANSACTIONS */}
         <div className="panel dashboard-transactions">
 
           <div className="panel-header">
 
             <div>
-              <h2>Recent Transactions</h2>
+
+              <h2>
+                Recent Transactions
+              </h2>
 
               <p>
                 Latest transactions analyzed by NEXRA
               </p>
-            </div>
 
-            <button className="panel-action">
-              View All →
-            </button>
+            </div>
+<button
+  type="button"
+  className="panel-action"
+  onClick={() => onNavigate("Transactions")}
+>
+  View All →
+</button>
 
           </div>
 
@@ -432,79 +576,118 @@ function Dashboard() {
           <div className="dashboard-transaction-list">
 
             <div className="dashboard-transaction-head">
-              <span>TRANSACTION</span>
-              <span>AMOUNT</span>
-              <span>RISK</span>
-              <span>STATUS</span>
+
+              <span>
+                TRANSACTION
+              </span>
+
+              <span>
+                AMOUNT
+              </span>
+
+              <span>
+                RISK
+              </span>
+
+              <span>
+                STATUS
+              </span>
+
             </div>
 
 
-            {transactions.slice(0, 4).map((transaction) => {
+            {transactions.length === 0 ? (
 
-              const riskScore =
-                Number(transaction.risk_score)
+              <div
+                style={{
+                  padding: "30px",
+                  textAlign: "center",
+                  color: "#888",
+                }}
+              >
+                No transactions analyzed yet.
+              </div>
 
-              const riskClass =
-                riskScore >= 80
-                  ? "high"
-                  : riskScore >= 60
-                  ? "medium"
-                  : "low"
+            ) : (
 
-              return (
-                <div
-                  className="dashboard-transaction-row"
-                  key={transaction.id}
-                >
+              transactions.slice(0, 4).map(
+                (transaction) => {
 
-                  <span>
-                    #{transaction.id}
-                  </span>
+                  const riskScore =
+                    Number(
+                      transaction.risk_score || 0
+                    )
 
-                  <strong>
-                    ₹{Number(
-                      transaction.amount
-                    ).toLocaleString("en-IN")}
-                  </strong>
+                  const riskClass =
+                    riskScore >= 80
+                      ? "high"
+                      : riskScore >= 50
+                      ? "medium"
+                      : "low"
 
-                  <b
-                    className={`dashboard-risk-badge ${riskClass}`}
-                  >
-                    {riskScore}
-                  </b>
+                  return (
+                    <div
+                      className="dashboard-transaction-row"
+                      key={transaction.id}
+                    >
 
-                  <span
-                    className={`dashboard-status-badge ${
-                      transaction.status === "Blocked"
-                        ? "blocked"
-                        : transaction.status === "Review"
-                        ? "review"
-                        : "approved"
-                    }`}
-                  >
-                    {transaction.status}
-                  </span>
+                      <span>
+                        #{transaction.id}
+                      </span>
 
-                </div>
+                      <strong>
+                        ₹{Number(
+                          transaction.amount || 0
+                        ).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </strong>
+
+                      <b
+                        className={`dashboard-risk-badge ${riskClass}`}
+                      >
+                        {riskScore.toFixed(1)}
+                      </b>
+
+                      <span
+                        className={`dashboard-status-badge ${
+                          transaction.status === "Blocked"
+                            ? "blocked"
+                            : transaction.status === "Review"
+                            ? "review"
+                            : "approved"
+                        }`}
+                      >
+                        {transaction.status}
+                      </span>
+
+                    </div>
+                  )
+                }
               )
-            })}
+
+            )}
 
           </div>
 
         </div>
 
 
-        {/* ACTIVE ALERTS */}
         <div className="panel dashboard-alerts">
 
           <div className="panel-header">
 
             <div>
-              <h2>Active Alerts</h2>
+
+              <h2>
+                Active Alerts
+              </h2>
 
               <p>
                 Security events requiring attention
               </p>
+
             </div>
 
             <span className="alert-count">
@@ -516,46 +699,47 @@ function Dashboard() {
 
           <div className="dashboard-alert-list">
 
-            {alerts.slice(0, 4).map((alert) => {
+            {alerts.slice(0, 4).map(
+              (alert) => {
 
-              const alertClass =
-                alert.severity === "Critical" ||
-                alert.severity === "High"
-                  ? "high"
-                  : "medium"
+                const alertClass =
+                  alert.severity === "Critical" ||
+                  alert.severity === "High"
+                    ? "high"
+                    : "medium"
 
-              return (
-                <div
-                  className="dashboard-alert"
-                  key={alert.id}
-                >
-
+                return (
                   <div
-                    className={`dashboard-alert-icon ${alertClass}`}
+                    className="dashboard-alert"
+                    key={alert.id}
                   >
-                    !
+
+                    <div
+                      className={`dashboard-alert-icon ${alertClass}`}
+                    >
+                      !
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        {alert.type}
+                      </strong>
+
+                      <span>
+                        {alert.message}
+                      </span>
+
+                      <small>
+                        {alert.status}
+                      </small>
+
+                    </div>
+
                   </div>
-
-
-                  <div>
-
-                    <strong>
-                      {alert.type}
-                    </strong>
-
-                    <span>
-                      {alert.message}
-                    </span>
-
-                    <small>
-                      {alert.status}
-                    </small>
-
-                  </div>
-
-                </div>
-              )
-            })}
+                )
+              }
+            )}
 
           </div>
 

@@ -3,12 +3,14 @@ import {
   getRisk,
   getTransactions,
   getAlerts,
+  getEvaluation,
 } from "../api"
 
 function RiskMonitor() {
   const [risk, setRisk] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [alerts, setAlerts] = useState([])
+  const [evaluation, setEvaluation] = useState(null)
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -18,13 +20,22 @@ function RiskMonitor() {
       getRisk(),
       getTransactions(),
       getAlerts(),
+      getEvaluation(),
     ])
-      .then(([riskData, transactionsData, alertsData]) => {
-        setRisk(riskData)
-        setTransactions(transactionsData || [])
-        setAlerts(alertsData || [])
-        setLoading(false)
-      })
+      .then(
+        ([
+          riskData,
+          transactionsData,
+          alertsData,
+          evaluationData,
+        ]) => {
+          setRisk(riskData)
+          setTransactions(transactionsData || [])
+          setAlerts(alertsData || [])
+          setEvaluation(evaluationData)
+          setLoading(false)
+        }
+      )
       .catch((error) => {
         console.error("Risk Monitor API error:", error)
         setError("Unable to connect to NEXRA backend")
@@ -32,9 +43,6 @@ function RiskMonitor() {
       })
   }, [])
 
-  /*
-   * Calculate risk totals
-   */
   const riskTotals = useMemo(() => {
     const high = Number(risk?.high_risk || 0)
     const medium = Number(risk?.medium_risk || 0)
@@ -50,10 +58,6 @@ function RiskMonitor() {
     }
   }, [risk])
 
-  /*
-   * Current risk score
-   * Uses the highest risk score from the available transaction stream.
-   */
   const currentRiskScore = useMemo(() => {
     if (!transactions.length) return 0
 
@@ -64,9 +68,6 @@ function RiskMonitor() {
     )
   }, [transactions])
 
-  /*
-   * Risk level
-   */
   const currentRiskLevel =
     currentRiskScore >= 80
       ? "HIGH RISK"
@@ -74,18 +75,12 @@ function RiskMonitor() {
       ? "MEDIUM RISK"
       : "LOW RISK"
 
-  /*
-   * Active high-priority alerts
-   */
   const highPriorityAlerts = alerts.filter(
     (alert) =>
       alert.severity === "Critical" ||
       alert.severity === "High"
   )
 
-  /*
-   * Transaction statistics
-   */
   const highRiskTransactions = transactions.filter(
     (transaction) =>
       Number(transaction.risk_score || 0) >= 80
@@ -99,9 +94,16 @@ function RiskMonitor() {
     }
   ).length
 
-  /*
-   * Loading
-   */
+  const modelRecall =
+    evaluation?.recall != null
+      ? (evaluation.recall * 100).toFixed(1)
+      : "0.0"
+
+  const modelPrecision =
+    evaluation?.precision != null
+      ? (evaluation.precision * 100).toFixed(1)
+      : "0.0"
+
   if (loading) {
     return (
       <div className="risk-monitor-page">
@@ -118,9 +120,6 @@ function RiskMonitor() {
     )
   }
 
-  /*
-   * Error
-   */
   if (error) {
     return (
       <div className="risk-monitor-page">
@@ -140,39 +139,38 @@ function RiskMonitor() {
   return (
     <div className="risk-monitor-page">
 
-      {/* =========================
-          PAGE HEADER
-      ========================== */}
-
       <div className="risk-monitor-heading">
 
         <div>
+
           <p className="risk-monitor-eyebrow">
             LIVE RISK ANALYSIS
           </p>
 
-          <h1>Risk Monitor</h1>
+          <h1>
+            Risk Monitor
+          </h1>
 
           <p className="risk-monitor-subtitle">
             Monitor transactions and identify high-risk activity in real time
           </p>
+
         </div>
 
         <div className="risk-monitor-status">
+
           <span className="risk-live-dot"></span>
-          <span>System Live</span>
+
+          <span>
+            System Live
+          </span>
+
         </div>
 
       </div>
 
 
-      {/* =========================
-          STAT CARDS
-      ========================== */}
-
       <section className="risk-monitor-stats">
-
-        {/* CURRENT RISK SCORE */}
 
         <div className="risk-stat-card">
 
@@ -181,8 +179,13 @@ function RiskMonitor() {
           </span>
 
           <strong className="risk-stat-value">
+
             {currentRiskScore}
-            <span>/100</span>
+
+            <span>
+              /100
+            </span>
+
           </strong>
 
           <small
@@ -199,8 +202,6 @@ function RiskMonitor() {
 
         </div>
 
-
-        {/* TRANSACTIONS SCANNED */}
 
         <div className="risk-stat-card">
 
@@ -219,8 +220,6 @@ function RiskMonitor() {
         </div>
 
 
-        {/* HIGH RISK DETECTED */}
-
         <div className="risk-stat-card">
 
           <span className="risk-stat-label">
@@ -232,37 +231,32 @@ function RiskMonitor() {
           </strong>
 
           <small className="risk-danger-text">
+
             {riskTotals.total > 0
               ? `${(
-                  (riskTotals.high / riskTotals.total) *
+                  (riskTotals.high /
+                    riskTotals.total) *
                   100
                 ).toFixed(1)}% of total risk data`
               : "No risk data"}
+
           </small>
 
         </div>
 
 
-        {/* DETECTION ACCURACY */}
-
         <div className="risk-stat-card">
 
           <span className="risk-stat-label">
-            Risk Coverage
+            Fraud Recall
           </span>
 
           <strong className="risk-stat-value risk-positive">
-            {riskTotals.total > 0
-              ? `${(
-                  ((riskTotals.high + riskTotals.medium) /
-                    riskTotals.total) *
-                  100
-                ).toFixed(1)}%`
-              : "0%"}
+            {modelRecall}%
           </strong>
 
           <small className="risk-safe-text">
-            High + medium risk coverage
+            Held-out model evaluation
           </small>
 
         </div>
@@ -270,38 +264,35 @@ function RiskMonitor() {
       </section>
 
 
-      {/* =========================
-          MAIN GRID
-      ========================== */}
-
       <section className="risk-monitor-main-grid">
 
-
-        {/* =========================
-            LIVE RISK ANALYSIS
-        ========================== */}
 
         <div className="risk-monitor-panel">
 
           <div className="risk-monitor-panel-header">
 
             <div>
-              <h2>Live Risk Analysis</h2>
+
+              <h2>
+                Live Risk Analysis
+              </h2>
 
               <p>
                 Real-time transaction risk monitoring
               </p>
+
             </div>
 
             <span className="risk-analysis-live">
+
               <i></i>
+
               LIVE
+
             </span>
 
           </div>
 
-
-          {/* RISK METER */}
 
           <div className="risk-meter-wrapper">
 
@@ -329,16 +320,13 @@ function RiskMonitor() {
           </div>
 
 
-          {/* RISK FACTORS */}
-
           <div className="risk-factor-list">
 
-
-            {/* TRANSACTION VELOCITY */}
 
             <div className="risk-factor">
 
               <div>
+
                 <span>
                   Transaction Velocity
                 </span>
@@ -346,6 +334,7 @@ function RiskMonitor() {
                 <small>
                   Activity frequency
                 </small>
+
               </div>
 
               <strong
@@ -363,11 +352,10 @@ function RiskMonitor() {
             </div>
 
 
-            {/* HIGH RISK ACTIVITY */}
-
             <div className="risk-factor">
 
               <div>
+
                 <span>
                   High Risk Activity
                 </span>
@@ -375,6 +363,7 @@ function RiskMonitor() {
                 <small>
                   Transactions above risk threshold
                 </small>
+
               </div>
 
               <strong
@@ -392,11 +381,10 @@ function RiskMonitor() {
             </div>
 
 
-            {/* MEDIUM RISK ACTIVITY */}
-
             <div className="risk-factor">
 
               <div>
+
                 <span>
                   Medium Risk Activity
                 </span>
@@ -404,10 +392,32 @@ function RiskMonitor() {
                 <small>
                   Transactions requiring monitoring
                 </small>
+
               </div>
 
               <strong className="factor-medium">
                 {mediumRiskTransactions}
+              </strong>
+
+            </div>
+
+
+            <div className="risk-factor">
+
+              <div>
+
+                <span>
+                  Model Precision
+                </span>
+
+                <small>
+                  Held-out test performance
+                </small>
+
+              </div>
+
+              <strong className="factor-medium">
+                {modelPrecision}%
               </strong>
 
             </div>
@@ -417,20 +427,20 @@ function RiskMonitor() {
         </div>
 
 
-        {/* =========================
-            ACTIVE RISK EVENTS
-        ========================== */}
-
         <div className="risk-monitor-panel">
 
           <div className="risk-monitor-panel-header">
 
             <div>
-              <h2>Active Risk Events</h2>
+
+              <h2>
+                Active Risk Events
+              </h2>
 
               <p>
                 Events requiring attention
               </p>
+
             </div>
 
             <span className="risk-event-count">
@@ -476,7 +486,6 @@ function RiskMonitor() {
                       !
                     </div>
 
-
                     <div className="risk-event-info">
 
                       <strong>
@@ -492,7 +501,6 @@ function RiskMonitor() {
                       </small>
 
                     </div>
-
 
                     <b
                       className={`risk-event-level ${alertClass}`}
@@ -513,23 +521,26 @@ function RiskMonitor() {
       </section>
 
 
-      {/* =========================
-          LIVE TRANSACTION STREAM
-      ========================== */}
-
       <section className="risk-monitor-panel transaction-stream-panel">
 
         <div className="risk-monitor-panel-header">
 
           <div>
-            <h2>Live Transaction Stream</h2>
+
+            <h2>
+              Live Transaction Stream
+            </h2>
 
             <p>
               Latest transactions being analyzed by the model
             </p>
+
           </div>
 
-          <button className="risk-panel-action">
+          <button
+            type="button"
+            className="risk-panel-action"
+          >
             View All →
           </button>
 
@@ -537,8 +548,6 @@ function RiskMonitor() {
 
 
         <div className="risk-transaction-table">
-
-          {/* TABLE HEADER */}
 
           <div className="risk-transaction-head">
 
@@ -565,8 +574,6 @@ function RiskMonitor() {
           </div>
 
 
-          {/* TRANSACTIONS */}
-
           {transactions.length === 0 ? (
 
             <div
@@ -581,65 +588,65 @@ function RiskMonitor() {
 
           ) : (
 
-            transactions.slice(0, 6).map((transaction) => {
+            transactions.slice(0, 6).map(
+              (transaction) => {
 
-              const riskScore =
-                Number(transaction.risk_score || 0)
+                const riskScore =
+                  Number(
+                    transaction.risk_score || 0
+                  )
 
-              const riskClass =
-                riskScore >= 80
-                  ? "high"
-                  : riskScore >= 60
-                  ? "medium"
-                  : "low"
+                const riskClass =
+                  riskScore >= 80
+                    ? "high"
+                    : riskScore >= 60
+                    ? "medium"
+                    : "low"
 
-              const statusClass =
-                transaction.status === "Blocked"
-                  ? "blocked"
-                  : transaction.status === "Review"
-                  ? "review"
-                  : "approved"
+                const statusClass =
+                  transaction.status === "Blocked"
+                    ? "blocked"
+                    : transaction.status === "Review"
+                    ? "review"
+                    : "approved"
 
-              return (
-                <div
-                  className="risk-transaction-row"
-                  key={transaction.id}
-                >
-
-                  <span className="transaction-id">
-                    #{transaction.id}
-                  </span>
-
-
-                  <span>
-                    ₹
-                    {Number(
-                      transaction.amount || 0
-                    ).toLocaleString("en-IN")}
-                  </span>
-
-
-                  <span>
-                    {transaction.location || "—"}
-                  </span>
-
-
-                  <strong
-                    className={`transaction-risk ${riskClass}`}
+                return (
+                  <div
+                    className="risk-transaction-row"
+                    key={transaction.id}
                   >
-                    {riskScore}
-                  </strong>
 
+                    <span className="transaction-id">
+                      #{transaction.id}
+                    </span>
 
-                  <b
-                    className={`transaction-status ${statusClass}`}
-                  >
-                    {transaction.status || "Unknown"}
-                  </b>
+                    <span>
+                      ₹
+                      {Number(
+                        transaction.amount || 0
+                      ).toLocaleString("en-IN")}
+                    </span>
 
-                </div>
-              )
-            })
+                    <span>
+                      {transaction.location || "—"}
+                    </span>
+
+                    <strong
+                      className={`transaction-risk ${riskClass}`}
+                    >
+                      {riskScore}
+                    </strong>
+
+                    <b
+                      className={`transaction-status ${statusClass}`}
+                    >
+                      {transaction.status || "Unknown"}
+                    </b>
+
+                  </div>
+                )
+              }
+            )
 
           )}
 

@@ -4,6 +4,7 @@ import {
   getRisk,
   getDashboard,
   getTransactions,
+  getEvaluation,
 } from "../api"
 
 function Reports() {
@@ -14,6 +15,7 @@ function Reports() {
   const [risk, setRisk] = useState(null)
   const [dashboard, setDashboard] = useState(null)
   const [transactions, setTransactions] = useState([])
+  const [evaluation, setEvaluation] = useState(null)
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -23,10 +25,6 @@ function Reports() {
     "Last 7 Days",
     "Last 30 Days",
   ]
-
-  // =====================================================
-  // LOAD REPORT DATA FROM BACKEND
-  // =====================================================
 
   useEffect(() => {
     const loadReportsData = async () => {
@@ -39,25 +37,26 @@ function Reports() {
           riskData,
           dashboardData,
           transactionsData,
+          evaluationData,
         ] = await Promise.all([
           getReports(),
           getRisk(),
           getDashboard(),
           getTransactions(),
+          getEvaluation(),
         ])
 
         setReports(reportsData)
         setRisk(riskData)
         setDashboard(dashboardData)
         setTransactions(transactionsData)
+        setEvaluation(evaluationData)
 
         setLoading(false)
       } catch (err) {
         console.error("Reports API error:", err)
 
-        setError(
-          "Unable to connect to NEXRA backend"
-        )
+        setError("Unable to connect to NEXRA backend")
 
         setLoading(false)
       }
@@ -65,10 +64,6 @@ function Reports() {
 
     loadReportsData()
   }, [])
-
-  // =====================================================
-  // CALCULATED DATA
-  // =====================================================
 
   const totalTransactions =
     dashboard?.total_transactions ??
@@ -80,8 +75,29 @@ function Reports() {
     0
 
   const detectionRate =
-    dashboard?.detection_accuracy ??
-    0
+    evaluation?.recall != null
+      ? (evaluation.recall * 100).toFixed(1)
+      : dashboard?.detection_accuracy ?? 0
+
+  const accuracy =
+    evaluation?.accuracy != null
+      ? (evaluation.accuracy * 100).toFixed(1)
+      : "0.0"
+
+  const precision =
+    evaluation?.precision != null
+      ? (evaluation.precision * 100).toFixed(1)
+      : "0.0"
+
+  const recall =
+    evaluation?.recall != null
+      ? (evaluation.recall * 100).toFixed(1)
+      : "0.0"
+
+  const f1 =
+    evaluation?.f1_score != null
+      ? (evaluation.f1_score * 100).toFixed(1)
+      : "0.0"
 
   const totalRiskTransactions =
     (risk?.high_risk ?? 0) +
@@ -115,14 +131,9 @@ function Reports() {
         ).toFixed(1)
       : "0.0"
 
-  // =====================================================
-  // LOADING STATE
-  // =====================================================
-
   if (loading) {
     return (
       <div className="page reports-page">
-
         <div
           style={{
             padding: "80px",
@@ -132,19 +143,13 @@ function Reports() {
         >
           Loading NEXRA reports...
         </div>
-
       </div>
     )
   }
 
-  // =====================================================
-  // ERROR STATE
-  // =====================================================
-
   if (error) {
     return (
       <div className="page reports-page">
-
         <div
           style={{
             padding: "80px",
@@ -154,17 +159,12 @@ function Reports() {
         >
           {error}
         </div>
-
       </div>
     )
   }
 
   return (
     <div className="page reports-page">
-
-      {/* =====================================================
-          PAGE HEADER
-          ===================================================== */}
 
       <div className="reports-header">
 
@@ -184,9 +184,6 @@ function Reports() {
 
         </div>
 
-
-        {/* DATE SELECTOR */}
-
         <div className="reports-date-wrapper">
 
           <button
@@ -196,7 +193,6 @@ function Reports() {
               setShowDateMenu((prev) => !prev)
             }
           >
-
             <span>
               {dateRange}
             </span>
@@ -208,9 +204,7 @@ function Reports() {
             >
               ⌄
             </span>
-
           </button>
-
 
           {showDateMenu && (
             <div className="reports-date-dropdown">
@@ -230,7 +224,6 @@ function Reports() {
                     setShowDateMenu(false)
                   }}
                 >
-
                   <span>
                     {option}
                   </span>
@@ -240,7 +233,6 @@ function Reports() {
                       ✓
                     </span>
                   )}
-
                 </button>
 
               ))}
@@ -251,11 +243,6 @@ function Reports() {
         </div>
 
       </div>
-
-
-      {/* =====================================================
-          REPORT STATISTICS
-          ===================================================== */}
 
       <section className="reports-stat-grid">
 
@@ -275,7 +262,6 @@ function Reports() {
 
         </div>
 
-
         <div className="reports-stat-card">
 
           <span>
@@ -293,7 +279,6 @@ function Reports() {
           </small>
 
         </div>
-
 
         <div className="reports-stat-card">
 
@@ -313,11 +298,10 @@ function Reports() {
 
         </div>
 
-
         <div className="reports-stat-card">
 
           <span>
-            Detection Rate
+            Fraud Recall
           </span>
 
           <strong className="reports-stat-positive">
@@ -325,24 +309,118 @@ function Reports() {
           </strong>
 
           <small className="reports-stat-positive">
-            Current model performance
+            Real held-out evaluation
           </small>
 
         </div>
 
       </section>
 
+      <section
+        className="reports-panel"
+        style={{
+          marginBottom: "24px",
+        }}
+      >
 
-      {/* =====================================================
-          MIDDLE SECTION
-          ===================================================== */}
+        <div className="reports-panel-header">
+
+          <div>
+
+            <h2>
+              AI Model Evaluation
+            </h2>
+
+            <p>
+              Performance measured on held-out test data
+            </p>
+
+          </div>
+
+          <span
+            className="reports-risk-badge low"
+          >
+            VERIFIED
+          </span>
+
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(4, minmax(0, 1fr))",
+            gap: "16px",
+          }}
+        >
+
+          <div className="reports-stat-card">
+
+            <span>
+              Accuracy
+            </span>
+
+            <strong>
+              {accuracy}%
+            </strong>
+
+          </div>
+
+          <div className="reports-stat-card">
+
+            <span>
+              Precision
+            </span>
+
+            <strong>
+              {precision}%
+            </strong>
+
+          </div>
+
+          <div className="reports-stat-card">
+
+            <span>
+              Recall
+            </span>
+
+            <strong>
+              {recall}%
+            </strong>
+
+          </div>
+
+          <div className="reports-stat-card">
+
+            <span>
+              F1 Score
+            </span>
+
+            <strong>
+              {f1}%
+            </strong>
+
+          </div>
+
+        </div>
+
+        {evaluation?.test_samples && (
+          <p
+            style={{
+              marginTop: "16px",
+              color: "#888",
+              fontSize: "13px",
+            }}
+          >
+            Evaluation dataset:{" "}
+            {evaluation.test_samples.toLocaleString("en-IN")}{" "}
+            held-out transactions
+          </p>
+        )}
+
+      </section>
 
       <div className="reports-middle-grid">
-
-
-        {/* =================================================
-            RISK SUMMARY
-            ================================================= */}
 
         <section className="reports-panel reports-risk-panel">
 
@@ -360,7 +438,6 @@ function Reports() {
 
             </div>
 
-
             <button
               type="button"
               className="reports-view-button"
@@ -373,11 +450,7 @@ function Reports() {
 
           </div>
 
-
           <div className="reports-risk-content">
-
-
-            {/* DONUT */}
 
             <div className="reports-donut">
 
@@ -397,11 +470,7 @@ function Reports() {
 
             </div>
 
-
-            {/* LEGEND */}
-
             <div className="reports-risk-legend">
-
 
               <div className="reports-risk-item">
 
@@ -421,7 +490,6 @@ function Reports() {
 
               </div>
 
-
               <div className="reports-risk-item">
 
                 <div className="reports-risk-label">
@@ -439,7 +507,6 @@ function Reports() {
                 </strong>
 
               </div>
-
 
               <div className="reports-risk-item">
 
@@ -465,11 +532,6 @@ function Reports() {
 
         </section>
 
-
-        {/* =================================================
-            GENERATE REPORT
-            ================================================= */}
-
         <section className="reports-panel reports-generate-panel">
 
           <div className="reports-panel-header">
@@ -488,11 +550,7 @@ function Reports() {
 
           </div>
 
-
           <div className="reports-generate-content">
-
-
-            {/* RISK INTELLIGENCE */}
 
             <button
               type="button"
@@ -521,9 +579,6 @@ function Reports() {
 
             </button>
 
-
-            {/* TRANSACTION ANALYSIS */}
-
             <button
               type="button"
               className="reports-generate-option"
@@ -550,9 +605,6 @@ function Reports() {
               </b>
 
             </button>
-
-
-            {/* MODEL PERFORMANCE */}
 
             <button
               type="button"
@@ -587,11 +639,6 @@ function Reports() {
 
       </div>
 
-
-      {/* =====================================================
-          RECENT REPORTS
-          ===================================================== */}
-
       <section className="reports-panel reports-recent-panel">
 
         <div className="reports-panel-header">
@@ -617,13 +664,7 @@ function Reports() {
 
         </div>
 
-
-        {/* TABLE */}
-
         <div className="reports-table">
-
-
-          {/* TABLE HEADER */}
 
           <div className="reports-table-head">
 
@@ -653,9 +694,6 @@ function Reports() {
 
           </div>
 
-
-          {/* TABLE ROWS */}
-
           {reports.length > 0 ? (
 
             reports.map((report) => (
@@ -664,9 +702,6 @@ function Reports() {
                 className="reports-table-row"
                 key={report.id}
               >
-
-
-                {/* REPORT NAME */}
 
                 <div className="reports-name">
 
@@ -688,24 +723,15 @@ function Reports() {
 
                 </div>
 
-
-                {/* PERIOD */}
-
                 <span className="reports-period">
                   {report.date}
                 </span>
-
-
-                {/* TRANSACTIONS */}
 
                 <strong className="reports-transactions">
                   {Number(
                     totalTransactions
                   ).toLocaleString("en-IN")}
                 </strong>
-
-
-                {/* RISK */}
 
                 <span
                   className={`reports-risk-badge ${
@@ -718,15 +744,9 @@ function Reports() {
                   {report.risk || "Medium"}
                 </span>
 
-
-                {/* GENERATED */}
-
                 <span className="reports-generated">
                   {report.status}
                 </span>
-
-
-                {/* ACTION */}
 
                 <button
                   type="button"
