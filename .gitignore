@@ -1,0 +1,29 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+ml/venv/
+
+# ML datasets
+ml/datasets/*.csv
+
+# Trained ML models
+ml/models/*.pkl
+ml/models/*.joblib
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables
+.env
+.env.*
+
+# Node
+node_modules/
+dist/
