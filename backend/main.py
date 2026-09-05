@@ -14,6 +14,13 @@ from sqlalchemy.orm import Session
 
 from database import engine, SessionLocal
 from models import Base, Transaction
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix
+)
 
 
 class PredictionLog(Base):
@@ -318,21 +325,13 @@ def get_test_transactions():
         "count": len(transactions),
         "transactions": transactions
     }
-
-
 @app.get("/api/evaluate")
 def evaluate_model():
 
-    if not MODEL_PATH.exists():
+    if fraud_model is None or scaler is None:
         raise HTTPException(
-            status_code=404,
-            detail="Fraud detection model not found"
-        )
-
-    if not SCALER_PATH.exists():
-        raise HTTPException(
-            status_code=404,
-            detail="Scaler not found"
+            status_code=503,
+            detail="Fraud model or scaler is not loaded"
         )
 
     if not TEST_DATA_PATH.exists():
@@ -346,104 +345,46 @@ def evaluate_model():
     X_test = test_data["X_test"]
     y_test = test_data["y_test"]
 
-    evaluation_model = joblib.load(
-        MODEL_PATH
-    )
+    X_test_scaled = scaler.transform(X_test)
 
-    evaluation_scaler = joblib.load(
-        SCALER_PATH
-    )
+    y_pred = fraud_model.predict(X_test_scaled)
 
-    X_test_scaled = (
-        evaluation_scaler.transform(X_test)
-    )
-
-    y_pred = (
-        evaluation_model.predict(
-            X_test_scaled
-        )
-    )
-
-    from sklearn.metrics import (
-        accuracy_score,
-        precision_score,
-        recall_score,
-        f1_score,
-        confusion_matrix
-    )
-
-    accuracy = accuracy_score(
-        y_test,
-        y_pred
-    )
-
+    accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(
         y_test,
         y_pred,
         zero_division=0
     )
-
     recall = recall_score(
         y_test,
         y_pred,
         zero_division=0
     )
-
     f1 = f1_score(
         y_test,
         y_pred,
         zero_division=0
     )
 
-    cm = confusion_matrix(
+    tn, fp, fn, tp = confusion_matrix(
         y_test,
         y_pred
-    )
+    ).ravel()
 
     return {
-        "dataset": "Credit Card Fraud Detection",
-
-        "test_samples": int(
-            len(y_test)
-        ),
-
-        "accuracy": round(
-            float(accuracy),
-            4
-        ),
-
-        "precision": round(
-            float(precision),
-            4
-        ),
-
-        "recall": round(
-            float(recall),
-            4
-        ),
-
-        "f1_score": round(
-            float(f1),
-            4
-        ),
-
-        "confusion_matrix": cm.tolist(),
-
-        "true_negative": int(
-            cm[0][0]
-        ),
-
-        "false_positive": int(
-            cm[0][1]
-        ),
-
-        "false_negative": int(
-            cm[1][0]
-        ),
-
-        "true_positive": int(
-            cm[1][1]
-        )
+        "accuracy": float(accuracy),
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1_score": float(f1),
+        "test_samples": int(len(y_test)),
+        "true_negative": int(tn),
+        "false_positive": int(fp),
+        "false_negative": int(fn),
+        "true_positive": int(tp),
+        "confusion_matrix": [
+            [int(tn), int(fp)],
+            [int(fn), int(tp)]
+        ]
     }
 
 
@@ -729,40 +670,69 @@ def get_transactions(
 
     return response
 
-
 @app.get("/api/alerts")
-def get_alerts():
+def get_alerts(
+    db: Session = Depends(get_db)
+):
 
-    return [
+    transactions = (
+        db.query(Transaction)
+        .order_by(Transaction.id.desc())
+        .limit(100)
+        .all()
+    )
 
-        {
-            "id": "ALT-001",
-            "type": "High Risk Transaction",
-            "message": "Unusual transaction detected",
-            "risk_score": 92,
-            "severity": "Critical",
-            "status": "Open"
-        },
+    alerts = []
 
-        {
-            "id": "ALT-002",
-            "type": "Suspicious Activity",
-            "message": "Multiple transactions from unusual location",
-            "risk_score": 81,
-            "severity": "High",
-            "status": "Investigating"
-        },
+    for transaction in transactions:
 
-        {
-            "id": "ALT-003",
-            "type": "Velocity Alert",
-            "message": "Transaction frequency exceeded threshold",
-            "risk_score": 74,
-            "severity": "Medium",
-            "status": "Open"
-        }
-    ]
+        risk_score = float(
+            transaction.risk_score or 0
+        )
 
+        if risk_score >= 80:
+
+            severity = "Critical"
+            alert_type = "High Risk Transaction"
+            message = "High-risk transaction detected"
+
+        elif risk_score >= 50:
+
+            severity = "High"
+            alert_type = "Suspicious Activity"
+            message = "Transaction requires investigation"
+
+        elif risk_score >= 25:
+
+            severity = "Medium"
+            alert_type = "Risk Threshold Alert"
+            message = "Transaction requires monitoring"
+
+        else:
+
+            continue
+
+        status = (
+            "Blocked"
+            if transaction.status == "Blocked"
+            else "Investigating"
+            if transaction.status == "Review"
+            else "Open"
+        )
+
+        alerts.append({
+            "id": f"ALT-TXN-{transaction.id:04d}",
+            "type": alert_type,
+            "message": message,
+            "risk_score": risk_score,
+            "severity": severity,
+            "status": status,
+            "transaction_id": transaction.transaction_id,
+            "amount": transaction.amount,
+            "location": transaction.location
+        })
+
+    return alerts
 
 @app.get("/api/models")
 def get_models(
@@ -846,17 +816,69 @@ def get_reports():
         }
     ]
 
-
 @app.get("/api/risk")
-def get_risk():
+def get_risk(
+    db: Session = Depends(get_db)
+):
+
+    transactions = (
+        db.query(Transaction)
+        .order_by(Transaction.id.desc())
+        .limit(1000)
+        .all()
+    )
+
+    if not transactions:
+        return {
+            "overall_risk": 0,
+            "risk_level": "Low",
+            "high_risk": 0,
+            "medium_risk": 0,
+            "low_risk": 0,
+            "risk_change": 0
+        }
+
+    scores = [
+        float(transaction.risk_score or 0)
+        for transaction in transactions
+    ]
+
+    high_risk = sum(
+        1 for score in scores
+        if score >= 80
+    )
+
+    medium_risk = sum(
+        1 for score in scores
+        if 50 <= score < 80
+    )
+
+    low_risk = sum(
+        1 for score in scores
+        if score < 50
+    )
+
+    overall_risk = round(
+        sum(scores) / len(scores),
+        2
+    )
+
+    if overall_risk >= 80:
+        risk_level = "Critical"
+    elif overall_risk >= 50:
+        risk_level = "High"
+    elif overall_risk >= 25:
+        risk_level = "Medium"
+    else:
+        risk_level = "Low"
 
     return {
-        "overall_risk": 68,
-        "risk_level": "Medium",
-        "high_risk": 6284,
-        "medium_risk": 12450,
-        "low_risk": 24166,
-        "risk_change": 12.6
+        "overall_risk": overall_risk,
+        "risk_level": risk_level,
+        "high_risk": high_risk,
+        "medium_risk": medium_risk,
+        "low_risk": low_risk,
+        "risk_change": 0
     }
 
 

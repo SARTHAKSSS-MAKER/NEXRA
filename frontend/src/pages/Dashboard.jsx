@@ -324,13 +324,9 @@ function Dashboard({ onNavigate}) {
 
             </div>
 
-            <button
-              type="button"
-              className="dashboard-filter"
-            >
-              Last 30 Days <span>⌄</span>
-            </button>
-
+           <span className="dashboard-period">
+  Last 30 Days
+</span>
           </div>
 
 
@@ -564,7 +560,7 @@ function Dashboard({ onNavigate}) {
             </div>
 <button
   type="button"
-  className="panel-action"
+  className="dashboard-view-all"
   onClick={() => onNavigate("Transactions")}
 >
   View All →

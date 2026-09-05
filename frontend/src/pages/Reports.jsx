@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react"
 import {
   getReports,
-  getRisk,
-  getDashboard,
   getTransactions,
   getEvaluation,
 } from "../api"
@@ -12,8 +10,6 @@ function Reports() {
   const [showDateMenu, setShowDateMenu] = useState(false)
 
   const [reports, setReports] = useState([])
-  const [risk, setRisk] = useState(null)
-  const [dashboard, setDashboard] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [evaluation, setEvaluation] = useState(null)
 
@@ -34,22 +30,26 @@ function Reports() {
 
         const [
           reportsData,
-          riskData,
-          dashboardData,
           transactionsData,
           evaluationData,
         ] = await Promise.all([
           getReports(),
-          getRisk(),
-          getDashboard(),
           getTransactions(),
           getEvaluation(),
         ])
 
-        setReports(reportsData)
-        setRisk(riskData)
-        setDashboard(dashboardData)
-        setTransactions(transactionsData)
+        setReports(
+          Array.isArray(reportsData)
+            ? reportsData
+            : reportsData?.reports || []
+        )
+
+        setTransactions(
+          Array.isArray(transactionsData)
+            ? transactionsData
+            : transactionsData?.transactions || []
+        )
+
         setEvaluation(evaluationData)
 
         setLoading(false)
@@ -65,49 +65,47 @@ function Reports() {
     loadReportsData()
   }, [])
 
-  const totalTransactions =
-    dashboard?.total_transactions ??
-    transactions.length
+  const liveTransactions = transactions.length
 
-  const highRiskTransactions =
-    dashboard?.high_risk_transactions ??
-    risk?.high_risk ??
-    0
+  const highRiskTransactions = transactions.filter(
+    (transaction) => {
+      const score = Number(
+        transaction.risk_score ?? 0
+      )
 
-  const detectionRate =
-    evaluation?.recall != null
-      ? (evaluation.recall * 100).toFixed(1)
-      : dashboard?.detection_accuracy ?? 0
+      return score >= 50
+    }
+  ).length
 
-  const accuracy =
-    evaluation?.accuracy != null
-      ? (evaluation.accuracy * 100).toFixed(1)
-      : "0.0"
+  const mediumRiskTransactions = transactions.filter(
+    (transaction) => {
+      const score = Number(
+        transaction.risk_score ?? 0
+      )
 
-  const precision =
-    evaluation?.precision != null
-      ? (evaluation.precision * 100).toFixed(1)
-      : "0.0"
+      return score >= 25 && score < 50
+    }
+  ).length
 
-  const recall =
-    evaluation?.recall != null
-      ? (evaluation.recall * 100).toFixed(1)
-      : "0.0"
+  const lowRiskTransactions = transactions.filter(
+    (transaction) => {
+      const score = Number(
+        transaction.risk_score ?? 0
+      )
 
-  const f1 =
-    evaluation?.f1_score != null
-      ? (evaluation.f1_score * 100).toFixed(1)
-      : "0.0"
+      return score < 25
+    }
+  ).length
 
   const totalRiskTransactions =
-    (risk?.high_risk ?? 0) +
-    (risk?.medium_risk ?? 0) +
-    (risk?.low_risk ?? 0)
+    highRiskTransactions +
+    mediumRiskTransactions +
+    lowRiskTransactions
 
   const highRiskPercentage =
     totalRiskTransactions > 0
       ? (
-          (risk.high_risk /
+          (highRiskTransactions /
             totalRiskTransactions) *
           100
         ).toFixed(1)
@@ -116,7 +114,7 @@ function Reports() {
   const mediumRiskPercentage =
     totalRiskTransactions > 0
       ? (
-          (risk.medium_risk /
+          (mediumRiskTransactions /
             totalRiskTransactions) *
           100
         ).toFixed(1)
@@ -125,11 +123,45 @@ function Reports() {
   const lowRiskPercentage =
     totalRiskTransactions > 0
       ? (
-          (risk.low_risk /
+          (lowRiskTransactions /
             totalRiskTransactions) *
           100
         ).toFixed(1)
       : "0.0"
+
+  const accuracy =
+    evaluation?.accuracy != null
+      ? (Number(evaluation.accuracy) * 100).toFixed(1)
+      : "0.0"
+
+  const precision =
+    evaluation?.precision != null
+      ? (Number(evaluation.precision) * 100).toFixed(1)
+      : "0.0"
+
+  const recall =
+    evaluation?.recall != null
+      ? (Number(evaluation.recall) * 100).toFixed(1)
+      : "0.0"
+
+  const f1 =
+    evaluation?.f1_score != null
+      ? (Number(evaluation.f1_score) * 100).toFixed(1)
+      : "0.0"
+
+  const testSamples =
+    Number(evaluation?.test_samples ?? 0)
+
+  const riskLevel =
+    highRiskTransactions > 0
+      ? "High"
+      : mediumRiskTransactions > 0
+        ? "Medium"
+        : "Low"
+
+  const getReportTransactionCount = () => {
+    return liveTransactions
+  }
 
   if (loading) {
     return (
@@ -269,13 +301,11 @@ function Reports() {
           </span>
 
           <strong>
-            {Number(
-              totalTransactions
-            ).toLocaleString("en-IN")}
+            {liveTransactions.toLocaleString("en-IN")}
           </strong>
 
           <small>
-            Across all risk models
+            Live AI predictions
           </small>
 
         </div>
@@ -287,13 +317,11 @@ function Reports() {
           </span>
 
           <strong>
-            {Number(
-              highRiskTransactions
-            ).toLocaleString("en-IN")}
+            {highRiskTransactions.toLocaleString("en-IN")}
           </strong>
 
           <small>
-            {highRiskPercentage}% of transactions
+            {highRiskPercentage}% of live predictions
           </small>
 
         </div>
@@ -305,7 +333,7 @@ function Reports() {
           </span>
 
           <strong className="reports-stat-positive">
-            {detectionRate}%
+            {recall}%
           </strong>
 
           <small className="reports-stat-positive">
@@ -364,6 +392,10 @@ function Reports() {
               {accuracy}%
             </strong>
 
+            <small>
+              Overall predictions
+            </small>
+
           </div>
 
           <div className="reports-stat-card">
@@ -375,6 +407,10 @@ function Reports() {
             <strong>
               {precision}%
             </strong>
+
+            <small>
+              Fraud prediction precision
+            </small>
 
           </div>
 
@@ -388,6 +424,10 @@ function Reports() {
               {recall}%
             </strong>
 
+            <small>
+              Fraud detection recall
+            </small>
+
           </div>
 
           <div className="reports-stat-card">
@@ -400,11 +440,15 @@ function Reports() {
               {f1}%
             </strong>
 
+            <small>
+              Precision-recall balance
+            </small>
+
           </div>
 
         </div>
 
-        {evaluation?.test_samples && (
+        {testSamples > 0 && (
           <p
             style={{
               marginTop: "16px",
@@ -413,7 +457,7 @@ function Reports() {
             }}
           >
             Evaluation dataset:{" "}
-            {evaluation.test_samples.toLocaleString("en-IN")}{" "}
+            {testSamples.toLocaleString("en-IN")}{" "}
             held-out transactions
           </p>
         )}
@@ -433,7 +477,7 @@ function Reports() {
               </h2>
 
               <p>
-                Transaction risk distribution
+                Live transaction risk distribution
               </p>
 
             </div>
@@ -457,9 +501,9 @@ function Reports() {
               <div className="reports-donut-center">
 
                 <strong>
-                  {Number(
-                    totalRiskTransactions
-                  ).toLocaleString("en-IN")}
+                  {totalRiskTransactions.toLocaleString(
+                    "en-IN"
+                  )}
                 </strong>
 
                 <span>
@@ -728,20 +772,20 @@ function Reports() {
                 </span>
 
                 <strong className="reports-transactions">
-                  {Number(
-                    totalTransactions
-                  ).toLocaleString("en-IN")}
+                  {getReportTransactionCount().toLocaleString(
+                    "en-IN"
+                  )}
                 </strong>
 
                 <span
                   className={`reports-risk-badge ${
                     (
                       report.risk ||
-                      "Medium"
+                      riskLevel
                     ).toLowerCase()
                   }`}
                 >
-                  {report.risk || "Medium"}
+                  {report.risk || riskLevel}
                 </span>
 
                 <span className="reports-generated">

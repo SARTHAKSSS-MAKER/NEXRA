@@ -2,10 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import { getModels, getEvaluation } from "../api"
 
 function Models() {
-  const [models, setModels] = useState([])
+  const [modelsData, setModelsData] = useState(null)
   const [evaluation, setEvaluation] = useState(null)
-  const [predictionsToday, setPredictionsToday] = useState(0)
-  const [filter, setFilter] = useState("All Models")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -14,20 +12,9 @@ function Models() {
       getModels(),
       getEvaluation(),
     ])
-      .then(([data, evaluationData]) => {
-        const modelData = Array.isArray(data)
-          ? data
-          : data.models || data.data || []
-
-        setModels(modelData)
+      .then(([modelData, evaluationData]) => {
+        setModelsData(modelData)
         setEvaluation(evaluationData)
-
-        setPredictionsToday(
-          Array.isArray(data)
-            ? 0
-            : Number(data.predictions_today || 0)
-        )
-
         setLoading(false)
       })
       .catch((err) => {
@@ -37,97 +24,71 @@ function Models() {
       })
   }, [])
 
-  const normalizedModels = useMemo(() => {
-    return models.map((model, index) => ({
-      id: model.id || model.name || `model-${index}`,
+  const fraudModel = useMemo(() => {
+    const backendModels = Array.isArray(modelsData)
+      ? modelsData
+      : modelsData?.models || []
 
-      name:
-        model.name ||
-        model.model_name ||
-        "Unknown Model",
+    const realModel =
+      backendModels.find(
+        (model) =>
+          model.name === "Fraud Detection Model"
+      ) || {}
 
-      type:
-        model.type ||
-        model.model_type ||
-        "Fraud Detection",
+    return {
+      id: realModel.id || "MOD-001",
+
+      name: "Fraud Detection Model",
+
+      type: "Financial Transaction Fraud",
 
       version:
-        model.version ||
-        model.model_version ||
-        "v1.0.0",
-accuracy: Number(
-  model.name === "Fraud Detection Model"
-    ? evaluation?.accuracy * 100 || 0
-    : model.accuracy ?? model.accuracy_score ?? 0
-),
+        realModel.version ||
+        "Financial Fraud Detection v1.0",
 
-precision: Number(
-  model.name === "Fraud Detection Model"
-    ? evaluation?.precision * 100 || 0
-    : model.precision ?? model.precision_score ?? 0
-),
+      accuracy:
+        evaluation?.accuracy != null
+          ? evaluation.accuracy * 100
+          : 0,
 
-recall: Number(
-  model.name === "Fraud Detection Model"
-    ? evaluation?.recall * 100 || 0
-    : model.recall ?? model.recall_score ?? 0
-),
+      precision:
+        evaluation?.precision != null
+          ? evaluation.precision * 100
+          : 0,
+
+      recall:
+        evaluation?.recall != null
+          ? evaluation.recall * 100
+          : 0,
+
+      f1:
+        evaluation?.f1_score != null
+          ? evaluation.f1_score * 100
+          : 0,
 
       status:
-        model.status ||
-        "Production",
+        realModel.status || "Production",
 
-      updated:
-        model.updated ||
-        model.updated_at ||
-        "Recently",
+      testSamples:
+        Number(evaluation?.test_samples || 0),
+    }
+  }, [modelsData, evaluation])
 
-      health: Number(
-        model.health ??
-        model.stability ??
-        98
-      ),
+  const predictionsToday = Number(
+    modelsData?.predictions_today || 0
+  )
 
-      latency: Number(
-        model.latency ??
-        model.prediction_latency ??
-        42
-      ),
-    }))
-  }, [models])
+  const modelReady =
+    evaluation !== null &&
+    evaluation.test_samples > 0
 
-  const filteredModels =
-    filter === "All Models"
-      ? normalizedModels
-      : normalizedModels.filter(
-          (model) => model.status === filter
-        )
+  const falsePositives = Number(
+    evaluation?.false_positive || 0
+  )
 
-  const activeModels = normalizedModels.filter(
-    (model) =>
-      model.status === "Production" ||
-      model.status === "Monitoring"
-  ).length
-
-  const averageAccuracy =
-    normalizedModels.length > 0
-      ? (
-          normalizedModels.reduce(
-            (sum, model) => sum + model.accuracy,
-            0
-          ) / normalizedModels.length
-        ).toFixed(1)
-      : "0.0"
-
-  const averageHealth =
-    normalizedModels.length > 0
-      ? (
-          normalizedModels.reduce(
-            (sum, model) => sum + model.health,
-            0
-          ) / normalizedModels.length
-        ).toFixed(1)
-      : "0.0"
+  const falseNegatives = Number(
+    evaluation?.false_negative || 0
+  )
 
   if (loading) {
     return (
@@ -139,7 +100,7 @@ recall: Number(
             color: "#aaa",
           }}
         >
-          Loading NEXRA models...
+          Loading NEXRA model intelligence...
         </div>
       </div>
     )
@@ -167,54 +128,76 @@ recall: Number(
       <div className="page-heading">
 
         <div>
+
           <p className="eyebrow">
             MODEL INTELLIGENCE
           </p>
 
-          <h1>Models</h1>
+          <h1>
+            Models
+          </h1>
 
           <p className="subtitle">
-            Monitor fraud detection models and their performance
+            Monitor the financial fraud detection model and its performance
           </p>
+
         </div>
 
-        <button
+        <span
           className="model-action"
-          type="button"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          + Deploy Model
-        </button>
+          Model 1 Active
+        </span>
 
       </div>
+
 
       <section className="model-overview">
 
         <div className="model-stat">
-          <span>Active Models</span>
+
+          <span>
+            Active Models
+          </span>
 
           <strong>
-            {activeModels}
+            1
           </strong>
 
           <small>
-            All systems operational
+            Financial fraud model
           </small>
+
         </div>
 
+
         <div className="model-stat">
-          <span>Avg. Accuracy</span>
+
+          <span>
+            Model Accuracy
+          </span>
 
           <strong>
-            {averageAccuracy}%
+            {fraudModel.accuracy.toFixed(1)}%
           </strong>
 
           <small>
-            Across deployed models
+            Held-out test performance
           </small>
+
         </div>
 
+
         <div className="model-stat">
-          <span>Predictions Today</span>
+
+          <span>
+            Predictions Today
+          </span>
 
           <strong>
             {predictionsToday.toLocaleString("en-IN")}
@@ -223,237 +206,293 @@ recall: Number(
           <small>
             Processed by risk engine
           </small>
+
         </div>
 
-        <div className="model-stat">
-          <span>Model Health</span>
 
-          <strong className="healthy">
-            {averageHealth}%
+        <div className="model-stat">
+
+          <span>
+            Model Status
+          </span>
+
+          <strong
+            className="healthy"
+            style={{
+              fontSize: "24px",
+            }}
+          >
+            {modelReady ? "READY" : "OFFLINE"}
           </strong>
 
           <small>
-            Operating normally
+            {modelReady
+              ? "Evaluation verified"
+              : "Evaluation unavailable"}
           </small>
+
         </div>
 
       </section>
+
 
       <section className="panel models-panel">
 
         <div className="panel-header">
 
           <div>
-            <h2>Deployed Models</h2>
+
+            <h2>
+              Deployed Model
+            </h2>
 
             <p>
-              Active machine learning models powering the risk engine
+              Active machine learning model powering the financial risk engine
             </p>
+
           </div>
 
-          <button
-            type="button"
+          <span
             className="model-filter"
-            onClick={() => {
-              if (filter === "All Models") {
-                setFilter("Production")
-              } else if (filter === "Production") {
-                setFilter("Monitoring")
-              } else {
-                setFilter("All Models")
-              }
+            style={{
+              cursor: "default",
             }}
           >
-            {filter} ▾
-          </button>
+            Financial Fraud ▾
+          </span>
 
         </div>
+
 
         <div className="models-table">
 
           <div className="models-table-head">
 
-            <span>Model</span>
-            <span>Version</span>
-            <span>Accuracy</span>
-            <span>Precision</span>
-            <span>Recall</span>
-            <span>Status</span>
-            <span>Updated</span>
+            <span>
+              Model
+            </span>
+
+            <span>
+              Version
+            </span>
+
+            <span>
+              Accuracy
+            </span>
+
+            <span>
+              Precision
+            </span>
+
+            <span>
+              Recall
+            </span>
+
+            <span>
+              Status
+            </span>
+
+            <span>
+              Test Set
+            </span>
 
           </div>
 
-          {filteredModels.length === 0 ? (
 
-            <div
-              style={{
-                padding: "40px",
-                textAlign: "center",
-                color: "#888",
-              }}
-            >
-              No models available.
-            </div>
+          <div className="model-row">
 
-          ) : (
+            <div className="model-name">
 
-            filteredModels.map((model) => (
+              <div className="model-icon">
+                ◈
+              </div>
 
-              <div
-                className="model-row"
-                key={model.id}
-              >
+              <div>
 
-                <div className="model-name">
-
-                  <div className="model-icon">
-                    ◈
-                  </div>
-
-                  <div>
-
-                    <strong>
-                      {model.name}
-                    </strong>
-
-                    <small>
-                      {model.type}
-                    </small>
-
-                  </div>
-
-                </div>
-
-                <span className="model-version">
-                  {model.version}
-                </span>
-
-                <strong className="model-score">
-                  {model.accuracy
-                    ? `${model.accuracy}%`
-                    : "—"}
+                <strong>
+                  {fraudModel.name}
                 </strong>
 
-                <strong className="model-score">
-                  {model.precision
-                    ? `${model.precision}%`
-                    : "—"}
-                </strong>
-
-                <strong className="model-score">
-                  {model.recall
-                    ? `${model.recall}%`
-                    : "—"}
-                </strong>
-
-                <span
-                  className={`model-status ${
-                    model.status === "Production"
-                      ? "production"
-                      : "monitoring"
-                  }`}
-                >
-                  <i></i>
-                  {model.status}
-                </span>
-
-                <span className="model-updated">
-                  {model.updated}
-                </span>
+                <small>
+                  {fraudModel.type}
+                </small>
 
               </div>
 
-            ))
+            </div>
 
-          )}
+
+            <span className="model-version">
+              {fraudModel.version}
+            </span>
+
+
+            <strong className="model-score">
+              {fraudModel.accuracy.toFixed(1)}%
+            </strong>
+
+
+            <strong className="model-score">
+              {fraudModel.precision.toFixed(1)}%
+            </strong>
+
+
+            <strong className="model-score">
+              {fraudModel.recall.toFixed(1)}%
+            </strong>
+
+
+            <span className="model-status production">
+
+              <i></i>
+
+              Production
+
+            </span>
+
+
+            <span className="model-updated">
+
+              {fraudModel.testSamples.toLocaleString(
+                "en-IN"
+              )}
+
+            </span>
+
+          </div>
 
         </div>
 
       </section>
 
+
       <div className="grid-two model-lower">
+
 
         <section className="panel model-performance">
 
           <div className="panel-header">
 
             <div>
-              <h2>Model Performance</h2>
+
+              <h2>
+                Held-out Evaluation
+              </h2>
 
               <p>
-                Average detection performance over time
+                Actual performance on unseen test data
               </p>
+
             </div>
 
-            <button
-              type="button"
+            <span
               className="view-all"
+              style={{
+                cursor: "default",
+              }}
             >
-              30 Days ▾
-            </button>
+              {fraudModel.testSamples.toLocaleString(
+                "en-IN"
+              )} Samples
+            </span>
 
           </div>
 
-          <div className="model-chart">
 
-            <div className="model-chart-grid">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(2, 1fr)",
+              gap: "18px",
+              padding: "25px",
+            }}
+          >
 
-              <span>100%</span>
-              <span>95%</span>
-              <span>90%</span>
-              <span>85%</span>
-              <span>80%</span>
+            <div
+              className="model-stat"
+              style={{
+                minHeight: "120px",
+              }}
+            >
+
+              <span>
+                Accuracy
+              </span>
+
+              <strong>
+                {fraudModel.accuracy.toFixed(1)}%
+              </strong>
+
+              <small>
+                Overall predictions
+              </small>
 
             </div>
 
-            <svg
-              viewBox="0 0 500 170"
-              preserveAspectRatio="none"
+
+            <div
+              className="model-stat"
+              style={{
+                minHeight: "120px",
+              }}
             >
 
-              <path
-                d="
-                  M0 125
-                  C35 120, 45 105, 75 110
-                  S115 90, 145 98
-                  S180 78, 210 84
-                  S245 62, 275 70
-                  S315 55, 345 61
-                  S385 42, 415 48
-                  S460 30, 500 35
-                "
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
+              <span>
+                Precision
+              </span>
 
-              <path
-                d="
-                  M0 125
-                  C35 120, 45 105, 75 110
-                  S115 90, 145 98
-                  S180 78, 210 84
-                  S245 62, 275 70
-                  S315 55, 345 61
-                  S385 42, 415 48
-                  S460 30, 500 35
-                  L500 170
-                  L0 170
-                  Z
-                "
-                fill="rgba(166,111,52,0.08)"
-                stroke="none"
-              />
+              <strong>
+                {fraudModel.precision.toFixed(1)}%
+              </strong>
 
-            </svg>
+              <small>
+                Fraud prediction precision
+              </small>
 
-            <div className="model-chart-labels">
+            </div>
 
-              <span>Aug 1</span>
-              <span>Aug 8</span>
-              <span>Aug 15</span>
-              <span>Aug 22</span>
-              <span>Aug 28</span>
+
+            <div
+              className="model-stat"
+              style={{
+                minHeight: "120px",
+              }}
+            >
+
+              <span>
+                Fraud Recall
+              </span>
+
+              <strong>
+                {fraudModel.recall.toFixed(1)}%
+              </strong>
+
+              <small>
+                Fraud cases detected
+              </small>
+
+            </div>
+
+
+            <div
+              className="model-stat"
+              style={{
+                minHeight: "120px",
+              }}
+            >
+
+              <span>
+                F1 Score
+              </span>
+
+              <strong>
+                {fraudModel.f1.toFixed(1)}%
+              </strong>
+
+              <small>
+                Precision-recall balance
+              </small>
 
             </div>
 
@@ -461,112 +500,158 @@ recall: Number(
 
         </section>
 
+
         <section className="panel model-health">
 
           <div className="panel-header">
 
             <div>
-              <h2>Model Health</h2>
+
+              <h2>
+                Model Diagnostics
+              </h2>
 
               <p>
-                Current system diagnostics
+                Current evaluation and system status
               </p>
+
             </div>
 
           </div>
 
+
           <div className="health-list">
 
+
             <div className="health-item">
 
               <div>
+
                 <span>
-                  Prediction Latency
+                  Model Availability
                 </span>
 
                 <strong>
-                  {normalizedModels.length
-                    ? `${Math.round(
-                        normalizedModels.reduce(
-                          (sum, model) =>
-                            sum + model.latency,
-                          0
-                        ) / normalizedModels.length
-                      )} ms`
-                    : "—"}
+                  {modelReady
+                    ? "Ready"
+                    : "Unavailable"}
                 </strong>
+
               </div>
 
               <div className="health-bar">
-                <i style={{ width: "82%" }}></i>
+
+                <i
+                  style={{
+                    width: modelReady
+                      ? "100%"
+                      : "0%",
+                  }}
+                ></i>
+
               </div>
 
             </div>
 
+
             <div className="health-item">
 
               <div>
+
                 <span>
-                  Data Quality
+                  Evaluation Coverage
                 </span>
 
                 <strong>
-                  {averageAccuracy}%
+                  {fraudModel.testSamples.toLocaleString(
+                    "en-IN"
+                  )}
                 </strong>
+
               </div>
 
               <div className="health-bar">
+
+                <i
+                  style={{
+                    width: "100%",
+                  }}
+                ></i>
+
+              </div>
+
+            </div>
+
+
+            <div className="health-item">
+
+              <div>
+
+                <span>
+                  False Positives
+                </span>
+
+                <strong>
+                  {falsePositives.toLocaleString(
+                    "en-IN"
+                  )}
+                </strong>
+
+              </div>
+
+              <div className="health-bar">
+
                 <i
                   style={{
                     width: `${Math.min(
-                      Number(averageAccuracy),
+                      (falsePositives /
+                        Math.max(
+                          fraudModel.testSamples,
+                          1
+                        )) *
+                        100,
                       100
                     )}%`,
                   }}
                 ></i>
+
               </div>
 
             </div>
 
+
             <div className="health-item">
 
               <div>
+
                 <span>
-                  Model Stability
+                  False Negatives
                 </span>
 
                 <strong>
-                  {averageHealth}%
+                  {falseNegatives.toLocaleString(
+                    "en-IN"
+                  )}
                 </strong>
+
               </div>
 
               <div className="health-bar">
+
                 <i
                   style={{
                     width: `${Math.min(
-                      Number(averageHealth),
+                      (falseNegatives /
+                        Math.max(
+                          fraudModel.testSamples,
+                          1
+                        )) *
+                        100,
                       100
                     )}%`,
                   }}
                 ></i>
-              </div>
 
-            </div>
-
-            <div className="health-item">
-
-              <div>
-                <span>
-                  Drift Detection
-                </span>
-
-                <strong>
-                  Normal
-                </strong>
-              </div>
-
-              <div className="health-bar">
-                <i style={{ width: "91%" }}></i>
               </div>
 
             </div>
